@@ -1,5 +1,5 @@
 import type { AppData, AreaId, PersonId, Thread } from './types'
-import { daysBetween, lastTouchedAt } from './time'
+import { daysBetween, lastTouchedAt, weeksAgoIndex } from './time'
 import type { ISODate } from './types'
 
 export interface RaiseItem {
@@ -44,4 +44,38 @@ export function raiseNext(
     })
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)
+}
+
+export interface CoverageRow {
+  area: AppData['areas'][number]
+  weeks: boolean[] // index 0 = current week, increasing = older
+  lastTouched: ISODate | null
+  overdue: boolean
+}
+
+export function areaCoverage(
+  data: AppData,
+  personId: PersonId,
+  now: ISODate,
+  weekCount: number,
+): CoverageRow[] {
+  const personThreads = data.threads.filter((t) => t.personId === personId)
+  return data.areas.map((area) => {
+    const touchDates = personThreads
+      .filter((t) => t.area === area.id)
+      .flatMap((t) => t.touches.map((touch) => touch.date))
+
+    const weeks = Array.from({ length: weekCount }, () => false)
+    let lastTouched: ISODate | null = null
+    for (const date of touchDates) {
+      const idx = weeksAgoIndex(now, date)
+      if (idx >= 0 && idx < weekCount) weeks[idx] = true
+      if (lastTouched === null || daysBetween(now, date) < daysBetween(now, lastTouched)) {
+        lastTouched = date
+      }
+    }
+    const overdue =
+      lastTouched === null || daysBetween(now, lastTouched) > area.cadenceDays
+    return { area, weeks, lastTouched, overdue }
+  })
 }

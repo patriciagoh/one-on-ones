@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { raiseNext } from './compute'
+import { raiseNext, areaCoverage } from './compute'
 import type { AppData, Thread } from './types'
 
 const areas = [
@@ -58,5 +58,53 @@ describe('raiseNext', () => {
       threads: [1, 2, 3, 4].map((n) => thread({ id: `t${n}`, touches: [{ date: '2026-01-01' }] })),
     }
     expect(raiseNext(data, 'p1', NOW, 2)).toHaveLength(2)
+  })
+})
+
+describe('areaCoverage', () => {
+  const areas2 = [
+    { id: 'career', name: 'Career', cadenceDays: 28 },
+    { id: 'wellbeing', name: 'Wellbeing', cadenceDays: 7 },
+  ]
+  const person2 = { id: 'p1', name: 'Alex', cadenceDays: 7, picture: [] }
+  const NOW2 = '2026-05-31'
+
+  it('returns one row per area with a 12-week grid', () => {
+    const data = {
+      people: [person2], areas: areas2,
+      threads: [
+        thread({ id: 'c', area: 'career', touches: [{ date: '2026-05-24' }] }),
+      ],
+    }
+    const rows = areaCoverage(data, 'p1', NOW2, 12)
+    expect(rows).toHaveLength(2)
+    expect(rows[0].weeks).toHaveLength(12)
+  })
+
+  it('marks the week of a touch as covered', () => {
+    const data = {
+      people: [person2], areas: areas2,
+      threads: [thread({ id: 'c', area: 'career', touches: [{ date: '2026-05-24' }] })],
+    }
+    const career = areaCoverage(data, 'p1', NOW2, 12).find((r) => r.area.id === 'career')!
+    // 2026-05-24 is 1 week before 2026-05-31
+    expect(career.weeks[1]).toBe(true)
+    expect(career.weeks[5]).toBe(false)
+  })
+
+  it('flags an area as overdue when last touch exceeds its cadence', () => {
+    const data = {
+      people: [person2], areas: areas2,
+      threads: [thread({ id: 'c', area: 'career', touches: [{ date: '2026-03-01' }] })],
+    }
+    const career = areaCoverage(data, 'p1', NOW2, 12).find((r) => r.area.id === 'career')!
+    expect(career.overdue).toBe(true)
+  })
+
+  it('treats an area with no threads as overdue with null lastTouched', () => {
+    const data = { people: [person2], areas: areas2, threads: [] }
+    const wb = areaCoverage(data, 'p1', NOW2, 12).find((r) => r.area.id === 'wellbeing')!
+    expect(wb.lastTouched).toBeNull()
+    expect(wb.overdue).toBe(true)
   })
 })

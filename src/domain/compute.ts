@@ -1,4 +1,4 @@
-import type { AppData, AreaId, PersonId, Thread } from './types'
+import type { AppData, AreaId, PersonId, Thread, PicturePoint } from './types'
 import { daysBetween, lastTouchedAt, weeksAgoIndex } from './time'
 import type { ISODate } from './types'
 
@@ -78,4 +78,30 @@ export function areaCoverage(
       lastTouched === null || daysBetween(now, lastTouched) > area.cadenceDays
     return { area, weeks, lastTouched, overdue }
   })
+}
+
+export function blindSpots(data: AppData, personId: PersonId): PicturePoint[] {
+  const person = data.people.find((p) => p.id === personId)
+  if (!person) return []
+  const activeAreas = new Set(
+    data.threads
+      .filter((t) => t.personId === personId && t.state === 'active')
+      .map((t) => t.area),
+  )
+  return person.picture.filter((pt) => pt.area !== undefined && !activeAreas.has(pt.area))
+}
+
+export interface ThreadGroups {
+  openLoops: Thread[]
+  commitments: Thread[]
+  resolved: Thread[]
+}
+
+export function groupThreads(data: AppData, personId: PersonId): ThreadGroups {
+  const mine = data.threads.filter((t) => t.personId === personId)
+  return {
+    openLoops: mine.filter((t) => t.state === 'active' && t.type === 'open-loop'),
+    commitments: mine.filter((t) => t.state === 'active' && t.type === 'commitment'),
+    resolved: mine.filter((t) => t.state === 'resolved'),
+  }
 }

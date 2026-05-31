@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { raiseNext, areaCoverage } from './compute'
+import { raiseNext, areaCoverage, blindSpots, groupThreads } from './compute'
 import type { AppData, Thread } from './types'
 
 const areas = [
@@ -106,5 +106,53 @@ describe('areaCoverage', () => {
     const wb = areaCoverage(data, 'p1', NOW2, 12).find((r) => r.area.id === 'wellbeing')!
     expect(wb.lastTouched).toBeNull()
     expect(wb.overdue).toBe(true)
+  })
+})
+
+describe('blindSpots', () => {
+  const areas3 = [
+    { id: 'career', name: 'Career', cadenceDays: 28 },
+    { id: 'wellbeing', name: 'Wellbeing', cadenceDays: 7 },
+  ]
+  it('flags a picture point whose area has no active thread', () => {
+    const person3 = {
+      id: 'p1', name: 'Alex', cadenceDays: 7,
+      picture: [{ text: 'mentor a junior', area: 'career' }],
+    }
+    const data = { people: [person3], areas: areas3, threads: [] }
+    const spots = blindSpots(data, 'p1')
+    expect(spots).toHaveLength(1)
+    expect(spots[0].text).toBe('mentor a junior')
+  })
+
+  it('does not flag a picture point whose area has an active thread', () => {
+    const person3 = {
+      id: 'p1', name: 'Alex', cadenceDays: 7,
+      picture: [{ text: 'mentor a junior', area: 'career' }],
+    }
+    const data = {
+      people: [person3], areas: areas3,
+      threads: [thread({ id: 'c', area: 'career', state: 'active' })],
+    }
+    expect(blindSpots(data, 'p1')).toHaveLength(0)
+  })
+})
+
+describe('groupThreads', () => {
+  const areas3 = [{ id: 'career', name: 'Career', cadenceDays: 28 }]
+  const person3 = { id: 'p1', name: 'Alex', cadenceDays: 7, picture: [] }
+  it('splits active open-loops and commitments and lists resolved', () => {
+    const data = {
+      people: [person3], areas: areas3,
+      threads: [
+        thread({ id: 'loop', type: 'open-loop', state: 'active' }),
+        thread({ id: 'commit', type: 'commitment', owner: 'you', state: 'active' }),
+        thread({ id: 'done', type: 'topic', state: 'resolved' }),
+      ],
+    }
+    const g = groupThreads(data, 'p1')
+    expect(g.openLoops.map((t) => t.id)).toEqual(['loop'])
+    expect(g.commitments.map((t) => t.id)).toEqual(['commit'])
+    expect(g.resolved.map((t) => t.id)).toEqual(['done'])
   })
 })

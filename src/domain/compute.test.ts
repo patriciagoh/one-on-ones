@@ -62,31 +62,24 @@ describe('raiseNext', () => {
 })
 
 describe('areaCoverage', () => {
-  const areas2 = [
-    { id: 'career', name: 'Career', cadenceDays: 28 },
-    { id: 'wellbeing', name: 'Wellbeing', cadenceDays: 7 },
-  ]
-  const person2 = { id: 'p1', name: 'Alex', cadenceDays: 7, picture: [] }
-  const NOW2 = '2026-05-31'
-
   it('returns one row per area with a 12-week grid', () => {
     const data = {
-      people: [person2], areas: areas2,
+      people: [person], areas,
       threads: [
         thread({ id: 'c', area: 'career', touches: [{ date: '2026-05-24' }] }),
       ],
     }
-    const rows = areaCoverage(data, 'p1', NOW2, 12)
+    const rows = areaCoverage(data, 'p1', NOW, 12)
     expect(rows).toHaveLength(2)
     expect(rows[0].weeks).toHaveLength(12)
   })
 
   it('marks the week of a touch as covered', () => {
     const data = {
-      people: [person2], areas: areas2,
+      people: [person], areas,
       threads: [thread({ id: 'c', area: 'career', touches: [{ date: '2026-05-24' }] })],
     }
-    const career = areaCoverage(data, 'p1', NOW2, 12).find((r) => r.area.id === 'career')!
+    const career = areaCoverage(data, 'p1', NOW, 12).find((r) => r.area.id === 'career')!
     // 2026-05-24 is 1 week before 2026-05-31
     expect(career.weeks[1]).toBe(true)
     expect(career.weeks[5]).toBe(false)
@@ -94,44 +87,69 @@ describe('areaCoverage', () => {
 
   it('flags an area as overdue when last touch exceeds its cadence', () => {
     const data = {
-      people: [person2], areas: areas2,
+      people: [person], areas,
       threads: [thread({ id: 'c', area: 'career', touches: [{ date: '2026-03-01' }] })],
     }
-    const career = areaCoverage(data, 'p1', NOW2, 12).find((r) => r.area.id === 'career')!
+    const career = areaCoverage(data, 'p1', NOW, 12).find((r) => r.area.id === 'career')!
     expect(career.overdue).toBe(true)
   })
 
   it('treats an area with no threads as overdue with null lastTouched', () => {
-    const data = { people: [person2], areas: areas2, threads: [] }
-    const wb = areaCoverage(data, 'p1', NOW2, 12).find((r) => r.area.id === 'wellbeing')!
+    const data = { people: [person], areas, threads: [] }
+    const wb = areaCoverage(data, 'p1', NOW, 12).find((r) => r.area.id === 'wellbeing')!
     expect(wb.lastTouched).toBeNull()
     expect(wb.overdue).toBe(true)
+  })
+
+  it('picks the chronologically latest touch, not the one closest to now by absolute distance', () => {
+    // career has cadenceDays=28; touches are 91 days ago and 3 days ago
+    // lastTouched must be '2026-05-28' (the recent past date), not '2026-03-01'
+    // and 3 days < 28 days cadence, so overdue must be false
+    const data = {
+      people: [person], areas,
+      threads: [
+        thread({ id: 'c', area: 'career', touches: [{ date: '2026-03-01' }, { date: '2026-05-28' }] }),
+      ],
+    }
+    const career = areaCoverage(data, 'p1', NOW, 12).find((r) => r.area.id === 'career')!
+    expect(career.lastTouched).toBe('2026-05-28')
+    expect(career.overdue).toBe(false)
+  })
+
+  it('treats a future-dated touch as the chronologically latest, not a recent past touch', () => {
+    // A mis-entered future date '2026-06-10' (10 days ahead) combined with a recent past date
+    // '2026-05-28' (3 days ago). The future date is farther by absolute distance but
+    // chronologically later — it must win as lastTouched.
+    const data = {
+      people: [person], areas,
+      threads: [
+        thread({ id: 'c', area: 'career', touches: [{ date: '2026-05-28' }, { date: '2026-06-10' }] }),
+      ],
+    }
+    const career = areaCoverage(data, 'p1', NOW, 12).find((r) => r.area.id === 'career')!
+    expect(career.lastTouched).toBe('2026-06-10')
   })
 })
 
 describe('blindSpots', () => {
-  const areas3 = [
-    { id: 'career', name: 'Career', cadenceDays: 28 },
-    { id: 'wellbeing', name: 'Wellbeing', cadenceDays: 7 },
-  ]
   it('flags a picture point whose area has no active thread', () => {
-    const person3 = {
+    const personWithPicture = {
       id: 'p1', name: 'Alex', cadenceDays: 7,
       picture: [{ text: 'mentor a junior', area: 'career' }],
     }
-    const data = { people: [person3], areas: areas3, threads: [] }
+    const data = { people: [personWithPicture], areas, threads: [] }
     const spots = blindSpots(data, 'p1')
     expect(spots).toHaveLength(1)
     expect(spots[0].text).toBe('mentor a junior')
   })
 
   it('does not flag a picture point whose area has an active thread', () => {
-    const person3 = {
+    const personWithPicture = {
       id: 'p1', name: 'Alex', cadenceDays: 7,
       picture: [{ text: 'mentor a junior', area: 'career' }],
     }
     const data = {
-      people: [person3], areas: areas3,
+      people: [personWithPicture], areas,
       threads: [thread({ id: 'c', area: 'career', state: 'active' })],
     }
     expect(blindSpots(data, 'p1')).toHaveLength(0)
@@ -139,11 +157,9 @@ describe('blindSpots', () => {
 })
 
 describe('groupThreads', () => {
-  const areas3 = [{ id: 'career', name: 'Career', cadenceDays: 28 }]
-  const person3 = { id: 'p1', name: 'Alex', cadenceDays: 7, picture: [] }
   it('splits active open-loops and commitments and lists resolved', () => {
     const data = {
-      people: [person3], areas: areas3,
+      people: [person], areas,
       threads: [
         thread({ id: 'loop', type: 'open-loop', state: 'active' }),
         thread({ id: 'commit', type: 'commitment', owner: 'you', state: 'active' }),

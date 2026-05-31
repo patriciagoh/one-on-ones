@@ -17,6 +17,11 @@ describe('weeksAgoIndex', () => {
     expect(weeksAgoIndex('2026-05-31', '2026-05-24')).toBe(1)
     expect(weeksAgoIndex('2026-05-31', '2026-05-10')).toBe(3)
   })
+
+  it('boundary: 6 days ago → 0, 7 days ago → 1', () => {
+    expect(weeksAgoIndex('2026-05-31', '2026-05-25')).toBe(0)
+    expect(weeksAgoIndex('2026-05-31', '2026-05-24')).toBe(1)
+  })
 })
 
 describe('lastTouchedAt', () => {

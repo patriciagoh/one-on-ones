@@ -1,6 +1,5 @@
-import type { AppData, AreaId, PersonId, Thread, PicturePoint } from './types'
+import type { AppData, Area, AreaId, PersonId, Thread, PicturePoint, ISODate } from './types'
 import { daysBetween, lastTouchedAt, weeksAgoIndex } from './time'
-import type { ISODate } from './types'
 
 export interface RaiseItem {
   thread: Thread
@@ -47,7 +46,7 @@ export function raiseNext(
 }
 
 export interface CoverageRow {
-  area: AppData['areas'][number]
+  area: Area
   weeks: boolean[] // index 0 = current week, increasing = older
   lastTouched: ISODate | null
   overdue: boolean
@@ -70,7 +69,7 @@ export function areaCoverage(
     for (const date of touchDates) {
       const idx = weeksAgoIndex(now, date)
       if (idx >= 0 && idx < weekCount) weeks[idx] = true
-      if (lastTouched === null || daysBetween(now, date) < daysBetween(now, lastTouched)) {
+      if (lastTouched === null || date > lastTouched) {
         lastTouched = date
       }
     }
@@ -97,6 +96,7 @@ export interface ThreadGroups {
   resolved: Thread[]
 }
 
+// Snoozed threads are intentionally excluded from all groups.
 export function groupThreads(data: AppData, personId: PersonId): ThreadGroups {
   const mine = data.threads.filter((t) => t.personId === personId)
   return {

@@ -25,8 +25,6 @@ export function PersonScreen({
   const spots = blindSpots(data, personId)
   const groups = groupThreads(data, personId)
 
-  const snoozeOneWeek = (id: string) => onSnooze(id)
-
   return (
     <div className="flex-1 p-6 space-y-6 max-w-3xl">
       <header>
@@ -34,7 +32,7 @@ export function PersonScreen({
         <p className="text-sm text-slate-500">1:1 every {person.cadenceDays} days</p>
       </header>
       <QuickCapture personId={personId} areas={data.areas} onAdd={onAdd} />
-      <RaiseNext items={items} blindSpots={spots} onDiscussed={onDiscussed} onSnooze={snoozeOneWeek} onResolve={onResolve} />
+      <RaiseNext items={items} blindSpots={spots} onDiscussed={onDiscussed} onSnooze={onSnooze} onResolve={onResolve} />
       <AreaCoverage rows={coverage} />
       <ThreadGroups groups={groups} />
     </div>

@@ -29,6 +29,7 @@ export function QuickCapture({
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Capture a thread…"
+        aria-label="Thread title"
         className="flex-1 min-w-[200px] px-3 py-2 rounded-md border border-slate-300 text-sm"
       />
       <select value={area} onChange={(e) => setArea(e.target.value)} className="px-2 py-2 rounded-md border border-slate-300 text-sm">

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { ThreadGroups as Groups } from '../domain/compute'
 
 export function ThreadGroups({ groups }: { groups: Groups }) {
@@ -22,7 +23,7 @@ export function ThreadGroups({ groups }: { groups: Groups }) {
   )
 }
 
-function Column({ title, children }: { title: string; children: React.ReactNode }) {
+function Column({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div>
       <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">{title}</h4>

@@ -5,6 +5,13 @@ export function AreaCoverage({ rows }: { rows: CoverageRow[] }) {
     <section className="space-y-2">
       <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Area coverage · last 12 weeks</h3>
       <table className="w-full text-sm">
+        <thead>
+          <tr>
+            <th className="text-left text-xs font-medium text-slate-400 pb-1">Area</th>
+            <th className="text-left text-xs font-medium text-slate-400 pb-1">Last 12 weeks</th>
+            <th className="text-right text-xs font-medium text-slate-400 pb-1">Status</th>
+          </tr>
+        </thead>
         <tbody>
           {rows.map((row) => (
             <tr key={row.area.id} className="border-b border-slate-100">

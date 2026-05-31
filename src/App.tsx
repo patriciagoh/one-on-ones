@@ -30,6 +30,7 @@ export default function App() {
         onSelect={setSelectedId}
       />
       <PersonScreen
+        key={selectedId}
         data={data}
         personId={selectedId}
         onAdd={addThread}

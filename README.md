@@ -1,8 +1,13 @@
 # Meaningful 1:1s
 
-A local, no-backend tool that helps a manager run meaningful 1:1s by capturing
+A no-backend tool that helps a manager run meaningful 1:1s by capturing
 conversation *threads* and surfacing, per report, what to raise next and how
 coverage looks over time.
+
+**Live demo:** https://patriciagoh.github.io/one-on-ones/
+
+(Data lives in your browser's localStorage and is seeded with sample people, so
+the demo is fully interactive — nothing is sent anywhere.)
 
 See the design spec in `docs/superpowers/specs/` for the concept and model.
 

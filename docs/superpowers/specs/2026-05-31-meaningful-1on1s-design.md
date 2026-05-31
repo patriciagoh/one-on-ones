@@ -1,7 +1,7 @@
 # Meaningful 1:1s — Design Spec
 
 **Date:** 2026-05-31
-**Status:** Approved (concept), pending tech-approach confirmation
+**Status:** Approved
 **Type:** Prototype — local web app
 
 ## Purpose
@@ -111,21 +111,20 @@ report shows overdue/at-a-glance status.
 - AI-generated question suggestions (cadence/blind-spot prompts are rule-based;
   a curated static prompt per area is acceptable, generation is not).
 
-## Tech approach (one open decision)
+## Tech approach
 
-**Recommended:** a single-page web app with **no backend** — state persisted to the
-browser's `localStorage`, seedable with sample data (Alex/Priya/Sam) so it's
-useful the moment it opens. Runnable via any static file server.
+A single-page web app with **no backend** — state persisted to the browser's
+`localStorage`, seeded with sample data (Alex/Priya/Sam) so it's useful the moment
+it opens.
 
-- *Stack:* vanilla HTML/CSS/JS modules, or a minimal React setup if the derived/
-  reactive UI gets unwieldy. Lean vanilla first; reach for React only if needed.
-- *Why:* zero infra, instant to run and demo, all the complexity is in the (pure,
-  testable) derived-computation functions rather than plumbing.
-- *Persistence boundary:* a thin storage module wraps `localStorage` so a real
-  backend could replace it later without touching the computation or UI layers.
-
-This is the single decision to confirm at review: **vanilla vs. React**, and
-**localStorage-only** as persistence.
+- *Stack:* **React + TypeScript**, built with **Vite**, styled with **Tailwind CSS**.
+- *Why no backend:* zero infra, instant to run and demo. The real complexity lives
+  in pure, testable derived-computation functions, not plumbing.
+- *Persistence boundary:* a thin storage module wraps `localStorage` behind a small
+  interface so a real backend could replace it later without touching the
+  computation or UI layers.
+- *Layering:* (1) data model + pure derived-computation functions, (2) storage
+  module, (3) React UI. The first layer has no React/DOM dependency.
 
 ## Testability
 

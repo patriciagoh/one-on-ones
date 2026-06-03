@@ -1,4 +1,4 @@
-import type { AreaKey, Person, Thread, ActionItem, ActionOwner } from "./types";
+import type { AreaKey, AsyncItem, Person, Thread, ActionItem, ActionOwner } from "./types";
 import { AREA_KEYS } from "./types";
 import { daysSince, clamp } from "./time";
 
@@ -89,4 +89,47 @@ export function balanceHealth(share: number): Balance {
   if (share < 55) return { tier: "warn", label: "Manager-heavy" };
   if (share <= 78) return { tier: "good", label: "Report-led" };
   return { tier: "warn", label: "Hands-off" };
+}
+
+export type Lead =
+  | { kind: "async"; item: AsyncItem }
+  | { kind: "cold-area"; area: AreaKey; days: number }
+  | { kind: "thread"; thread: Thread }
+  | { kind: "relationship" };
+
+export interface PrepDigest {
+  cadence: CadenceStatus;
+  lead: Lead;
+  raise: Thread[];          // top 0-3
+  openMine: ActionItem[];
+  openTheirs: ActionItem[];
+  async: AsyncItem[];
+  coldArea: { area: AreaKey; days: number };
+  lastShare: number;
+  lastBalance: Balance;
+}
+
+export function prepDigest(p: Person, now: string): PrepDigest {
+  const raise = raiseQueue(p, now).slice(0, 3);
+  const coldKey = bluntestSpot(p);
+  const coldDays = p.coverage[coldKey];
+  const lastShare = [...p.talkTrend].reverse().find((n) => n > 0) ?? 0;
+
+  let lead: Lead;
+  const stressed = p.asyncAgenda.find((a) => a.mood === "stressed");
+  if (stressed) lead = { kind: "async", item: stressed };
+  else if (coldDays > 35) lead = { kind: "cold-area", area: coldKey, days: coldDays };
+  else if (raise.length) lead = { kind: "thread", thread: raise[0] };
+  else lead = { kind: "relationship" };
+
+  return {
+    cadence: cadenceStatus(p, now),
+    lead, raise,
+    openMine: openActionsByOwner(p.actions, "manager"),
+    openTheirs: openActionsByOwner(p.actions, "report"),
+    async: p.asyncAgenda,
+    coldArea: { area: coldKey, days: coldDays },
+    lastShare,
+    lastBalance: balanceHealth(lastShare),
+  };
 }

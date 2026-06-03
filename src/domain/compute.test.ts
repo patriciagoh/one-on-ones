@@ -4,6 +4,7 @@ import {
   coverageScore, bluntestSpot, cadenceStatus,
   raiseScore, raiseQueue,
   openActions, openActionsByOwner, teamBlindSpots, attentionScore, attentionOrder,
+  prepDigest,
 } from "./compute";
 import type { Person, Thread, ActionItem } from "./types";
 
@@ -146,5 +147,28 @@ describe("attention", () => {
       actions: [action({ createdAt: "2026-05-01" })] }); // >21d overdue manager action
     expect(attentionScore(hot, "2026-06-04")).toBeGreaterThan(attentionScore(calm, "2026-06-04"));
     expect(attentionOrder([calm, hot], "2026-06-04").map((p) => p.id)).toEqual(["hot", "calm"]);
+  });
+});
+
+describe("prepDigest lead selection", () => {
+  const now = "2026-06-04";
+  it("1) leads with a stressed async item when present", () => {
+    const p = person({ asyncAgenda: [{ id: "s", text: "swamped", area: "workload", mood: "stressed", addedAt: now }] });
+    expect(prepDigest(p, now).lead.kind).toBe("async");
+  });
+  it("2) else leads with coldest area when >35d", () => {
+    const p = person({ coverage: { ...baseCoverage, relationships: 47 } });
+    const lead = prepDigest(p, now).lead;
+    expect(lead.kind).toBe("cold-area");
+    if (lead.kind === "cold-area") expect(lead.area).toBe("relationships");
+  });
+  it("3) else leads with the top raise-queue thread", () => {
+    const p = person({ threads: [thread({ id: "t1", priority: 90, raise: true, lastTouched: now })] });
+    const lead = prepDigest(p, now).lead;
+    expect(lead.kind).toBe("thread");
+    if (lead.kind === "thread") expect(lead.thread.id).toBe("t1");
+  });
+  it("4) else falls back to protect-the-relationship", () => {
+    expect(prepDigest(person({}), now).lead.kind).toBe("relationship");
   });
 });

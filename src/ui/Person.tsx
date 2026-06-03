@@ -20,6 +20,7 @@ import { SIGNAL } from "./atoms/signal";
 import { PrepDigest } from "./PrepDigest";
 import { ActionLedger } from "./ActionLedger";
 import { AsyncAgenda } from "./AsyncAgenda";
+import { Masthead } from "./Masthead";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -274,25 +275,7 @@ export function Person({
   return (
     <div className="min-h-screen bg-oat">
       {/* Masthead */}
-      <header
-        className="sticky top-0 z-10 bg-oat border-b border-line"
-        style={{ borderBottomColor: "var(--line)" }}
-      >
-        <div className="max-w-content mx-auto px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <a
-              href="#/"
-              className="font-mono font-bold text-sm text-ink tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-matcha-deep rounded-sm"
-              aria-label="one-on-ones — home"
-            >
-              one-on-<span className="text-matcha-deep">ones</span>
-            </a>
-            <span className="font-mono text-xs text-muted hidden sm:inline" aria-hidden="true">
-              · meaningful 1:1s
-            </span>
-          </div>
-        </div>
-      </header>
+      <Masthead />
 
       {/* Main */}
       <main id="main" tabIndex={-1} className="max-w-content mx-auto px-6 py-8">

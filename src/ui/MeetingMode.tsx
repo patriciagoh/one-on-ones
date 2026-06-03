@@ -11,6 +11,7 @@ import type { AppData, AreaKey } from "../domain/types";
 import { balanceHealth, raiseQueue } from "../domain/compute";
 import { AreaTag } from "./atoms/AreaTag";
 import { Avatar } from "./atoms/Avatar";
+import { Masthead } from "./Masthead";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -386,38 +387,20 @@ function MeetingModeInner({
   return (
     <div className="min-h-screen bg-oat text-ink">
       {/* ── Masthead ── */}
-      <header className="sticky top-0 z-10 bg-paper border-b border-line px-6 py-0 h-14 flex items-center gap-4">
-        {/* Wordmark */}
-        <nav aria-label="Site">
-          <Link
-            to="/"
-            className="font-sans font-bold text-base text-ink hover:text-matcha-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-matcha-deep focus-visible:ring-offset-2"
-          >
-            one-on-<span className="text-matcha-deep">ones</span>
-          </Link>
-        </nav>
-        <span className="text-muted text-sm" aria-hidden="true">
-          ·
-        </span>
-        <span className="text-muted text-sm">meaningful 1:1s</span>
-
-        {/* Right nav */}
-        <nav
-          aria-label="Breadcrumb"
-          className="ml-auto flex items-center gap-4"
-        >
-          <Link
-            to={`/person/${person.id}`}
-            className="text-sm text-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-matcha-deep focus-visible:ring-offset-2"
-          >
-            ← {person.name}
-          </Link>
-          <span className="text-muted text-sm" aria-hidden="true">
-            ·
+      <Masthead
+        rightSlot={
+          <span className="flex items-center gap-3 font-mono text-xs text-muted">
+            <Link
+              to={`/person/${person.id}`}
+              className="hover:text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-matcha-deep rounded-sm"
+            >
+              ← {person.name}
+            </Link>
+            <span aria-hidden="true">·</span>
+            <span>{data.people.length} reports</span>
           </span>
-          <span className="text-sm text-muted">{data.people.length} reports</span>
-        </nav>
-      </header>
+        }
+      />
 
       <main id="main" tabIndex={-1} className="focus-visible:outline-none">
         {/* ── Meeting header card ── */}

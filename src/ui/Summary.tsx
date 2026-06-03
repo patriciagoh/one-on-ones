@@ -3,7 +3,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import type { AppData } from "../domain/types";
-import { AREA_LABELS } from "../domain/types";
 import { balanceHealth } from "../domain/compute";
 import { AreaTag } from "./atoms/AreaTag";
 import { Masthead } from "./Masthead";
@@ -15,8 +14,6 @@ import { Masthead } from "./Masthead";
 interface SummaryProps {
   data: AppData;
   personId: string;
-  /** ISO date string for "today" — used for display/formatting context. */
-  now: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -55,7 +52,7 @@ function TileCard({ children }: { children: React.ReactNode }) {
 // Summary screen
 // ---------------------------------------------------------------------------
 
-export function Summary({ data, personId, now }: SummaryProps) {
+export function Summary({ data, personId }: SummaryProps) {
   const person = data.people.find((p) => p.id === personId);
 
   // ── Not-found guard ──────────────────────────────────────────────────────
@@ -113,9 +110,6 @@ export function Summary({ data, personId, now }: SummaryProps) {
   const totalSeconds = meeting.durationMin * 60;
   const themSeconds = Math.round(totalSeconds * (meeting.reportShare / 100));
   const youSeconds = totalSeconds - themSeconds;
-
-  // ── Unused now ── suppress lint warning (now is passed for prop-driven convention)
-  void now;
 
   return (
     <div className="min-h-screen bg-oat">

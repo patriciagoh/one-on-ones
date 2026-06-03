@@ -10,13 +10,6 @@ interface MastheadProps {
    * For interactive meeting controls, keep them in the screen's own header card.
    */
   rightSlot?: React.ReactNode;
-  /**
-   * Path for an optional back link rendered to the left of the wordmark.
-   * e.g. "/person/p-maya" for the summary screen.
-   */
-  backTo?: string;
-  /** Label for the back link, e.g. "← Maya". */
-  backLabel?: string;
 }
 
 /**
@@ -24,24 +17,15 @@ interface MastheadProps {
  *
  * All screens share this component so the wordmark is never duplicated inline.
  */
-export function Masthead({ rightSlot, backTo, backLabel }: MastheadProps) {
+export function Masthead({ rightSlot }: MastheadProps) {
   return (
     <header
       className="sticky top-0 z-10 bg-oat border-b border-line"
       style={{ borderBottomColor: "var(--line)" }}
     >
       <div className="max-w-content mx-auto px-6 h-14 flex items-center justify-between">
-        {/* Left side: optional back link + wordmark + subtitle */}
+        {/* Left side: wordmark + subtitle */}
         <div className="flex items-center gap-3">
-          {backTo && backLabel && (
-            <Link
-              to={backTo}
-              className="font-mono text-xs text-muted hover:text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-matcha-deep rounded-sm"
-            >
-              {backLabel}
-            </Link>
-          )}
-
           {/* Wordmark — decorative link to root */}
           <Link
             to="/"
@@ -57,9 +41,9 @@ export function Masthead({ rightSlot, backTo, backLabel }: MastheadProps) {
 
         {/* Right side: passed-in slot (counts, links, etc.) */}
         {rightSlot && (
-          <nav aria-label="Site navigation">
+          <div>
             {rightSlot}
-          </nav>
+          </div>
         )}
       </div>
     </header>

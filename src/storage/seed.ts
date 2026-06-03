@@ -2,10 +2,6 @@ import type {
   AppData,
   Person,
   TemplateDef,
-  Thread,
-  ActionItem,
-  AsyncItem,
-  MeetingRecord,
 } from "../domain/types";
 
 const TEMPLATES: TemplateDef[] = [

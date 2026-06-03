@@ -90,21 +90,24 @@ export function MeetingMode({
   // ── Not-found guard ────────────────────────────────────────────────────────
   if (!person) {
     return (
-      <div className="max-w-screen-md mx-auto px-6 py-12">
-        {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
-        <h1
-          autoFocus
-          tabIndex={-1}
-          className="font-sans font-bold text-2xl text-ink mb-4 focus-visible:outline-none"
-        >
-          Person not found.
-        </h1>
-        <Link
-          to="/"
-          className="text-matcha-deep underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-matcha-deep focus-visible:ring-offset-2"
-        >
-          ← Back to reports
-        </Link>
+      <div className="min-h-screen bg-oat">
+        <Masthead />
+        <main id="main" tabIndex={-1} className="max-w-content mx-auto px-6 py-16 flex flex-col items-center">
+          {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
+          <h1
+            autoFocus
+            tabIndex={-1}
+            className="font-sans font-bold text-2xl text-ink mb-4 focus-visible:outline-none"
+          >
+            Person not found.
+          </h1>
+          <Link
+            to="/"
+            className="font-mono text-sm text-matcha-deep hover:text-matcha transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-matcha-deep rounded-sm px-1"
+          >
+            ← Back to reports
+          </Link>
+        </main>
       </div>
     );
   }

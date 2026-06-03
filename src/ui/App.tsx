@@ -81,7 +81,7 @@ function SummaryRoute({
   const { id = "" } = useParams<{ id: string }>();
 
   return (
-    <Summary data={state.data} personId={id} now={NOW} />
+    <Summary data={state.data} personId={id} />
   );
 }
 

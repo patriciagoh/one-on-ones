@@ -11,7 +11,7 @@ it("Summary has no axe violations (person with meetings)", async () => {
   // characteristic 22% low-talk-share meeting.
   const { container } = render(
     <MemoryRouter>
-      <Summary data={seedData()} personId="p-maya" now="2026-06-04" />
+      <Summary data={seedData()} personId="p-maya" />
     </MemoryRouter>,
   );
   expect(await axe(container)).toHaveNoViolations();
@@ -25,7 +25,7 @@ it("Summary renders a graceful state when person has no meetings", async () => {
 
   const { container, getByText } = render(
     <MemoryRouter>
-      <Summary data={data} personId="p-maya" now="2026-06-04" />
+      <Summary data={data} personId="p-maya" />
     </MemoryRouter>,
   );
   // Graceful empty state renders without axe violations
@@ -37,7 +37,7 @@ it("Summary renders a graceful state when person has no meetings", async () => {
 it("Summary renders a graceful state when person is not found", async () => {
   const { container } = render(
     <MemoryRouter>
-      <Summary data={seedData()} personId="p-nonexistent" now="2026-06-04" />
+      <Summary data={seedData()} personId="p-nonexistent" />
     </MemoryRouter>,
   );
   expect(await axe(container)).toHaveNoViolations();

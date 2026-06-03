@@ -28,6 +28,7 @@
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.5.0",
     "fast-glob": "^3.3.3",
+    "happy-dom": "^20.9.0",
     "jsdom": "^29.1.1",
     "matcha-oat-design-system": "github:patriciagoh/matcha-oat-design-system",
     "postcss": "^8.5.15",

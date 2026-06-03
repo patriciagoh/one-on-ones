@@ -8,7 +8,12 @@ export default defineConfig({
   plugins: [react()],
   test: {
     globals: true,
-    environment: "jsdom",
+    // Default to node for domain (pure-function) tests; UI test files that
+    // need a DOM annotate themselves with @vitest-environment happy-dom.
+    // Note: jsdom 29 + html-encoding-sniffer 6 + @exodus/bytes (ESM-only)
+    // causes ERR_REQUIRE_ESM on this Node version; happy-dom avoids the issue.
+    environment: "node",
     setupFiles: ["./src/test/setup.ts"],
+    environmentOptions: {},
   },
 });

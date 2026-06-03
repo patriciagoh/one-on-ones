@@ -16,3 +16,13 @@ export function actionAgeTier(days: number): ActionAgeTier {
   if (days <= 21) return "warming";
   return "cold";
 }
+
+export type BalanceTier = "bad" | "warn" | "good" | "none";
+export interface Balance { tier: BalanceTier; label: string; }
+export function balanceHealth(share: number): Balance {
+  if (share <= 0) return { tier: "none", label: "No data" };
+  if (share < 40) return { tier: "bad", label: "You're driving" };
+  if (share < 55) return { tier: "warn", label: "Manager-heavy" };
+  if (share <= 78) return { tier: "good", label: "Report-led" };
+  return { tier: "warn", label: "Hands-off" };
+}

@@ -16,7 +16,7 @@ body { background: var(--oat); color: var(--ink); font-family: var(--sans); }
   outline-offset: var(--focus-offset);
 }
 
-/* >=24px interactive targets (WCAG 2.5.8); buttons/role=button get a floor. */
+/* Height floor for interactive targets (WCAG 2.5.8); width handled per-component. */
 :where(button, [role="button"]) { min-height: 24px; }
 
 /* Reduced motion (WCAG 2.3.3). */

@@ -8,7 +8,7 @@
 
   /* soft fills for the same tiers (chips, washes) */
   --ooo-fresh-bg:   var(--matcha-tint);
-  --ooo-warming-bg: var(--matcha-tint);
+  --ooo-warming-bg: var(--matcha-tint); /* same tint as fresh; foreground token differentiates */
   --ooo-stale-bg:   var(--yolk-tint);
   --ooo-cold-bg:    var(--bad-bg);
 }

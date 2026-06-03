@@ -38,6 +38,15 @@ export function cadenceStatus(p: Person, now: string): CadenceStatus {
   return "cold";
 }
 
+export function raiseScore(t: Thread, now: string): number {
+  const staleness = Math.min(daysSince(t.lastTouched, now), 60);
+  return t.priority * 0.7 + staleness * 0.5 + (t.raise ? 20 : 0) + (t.status === "parked" ? -25 : 0);
+}
+
+export function raiseQueue(p: Person, now: string): Thread[] {
+  return [...p.threads].sort((a, b) => raiseScore(b, now) - raiseScore(a, now));
+}
+
 export type BalanceTier = "bad" | "warn" | "good" | "none";
 export interface Balance { tier: BalanceTier; label: string; }
 export function balanceHealth(share: number): Balance {

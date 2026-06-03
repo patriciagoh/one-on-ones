@@ -2,8 +2,9 @@ import { describe, it, expect } from "vitest";
 import {
   stalenessTier, actionAgeTier, balanceHealth,
   coverageScore, bluntestSpot, cadenceStatus,
+  raiseScore, raiseQueue,
 } from "./compute";
-import type { Person } from "./types";
+import type { Person, Thread } from "./types";
 
 const baseCoverage = { growth: 0, feedback: 0, workload: 0, wellbeing: 0, relationships: 0, recognition: 0 };
 function person(p: Partial<Person>): Person {
@@ -66,6 +67,31 @@ describe("cadenceStatus", () => {
   // NOTE: plan had "2026-05-15" (20 days → ratio 2.86 → "cold"), which is inconsistent.
   it("stale past 1.5x cadence", () => {
     expect(cadenceStatus(person({ cadenceDays: 7, lastOneOnOne: "2026-05-21" }), "2026-06-04")).toBe("stale");
+  });
+});
+
+function thread(t: Partial<Thread>): Thread {
+  return { id: "t", title: "", area: "growth", status: "open", priority: 0,
+           lastTouched: "2026-06-04", note: "", raise: false, ...t };
+}
+
+describe("raiseQueue", () => {
+  const now = "2026-06-04";
+  it("scores priority*0.7 + min(staleness,60)*0.5 + raise(20) + parked(-25)", () => {
+    // priority=100, lastTouched=now → staleness=0, score = 70
+    expect(raiseScore(thread({ priority: 100, lastTouched: now }), now)).toBeCloseTo(70);
+    // priority=0, lastTouched="2026-05-25" (10 days before now), raise=true
+    // staleness = min(10,60) = 10; score = 0*0.7 + 10*0.5 + 20 = 25
+    // NOTE: plan comment "9 days → ~4.5" was incorrect; May 25→Jun 4 = 10 days → 25
+    expect(raiseScore(thread({ priority: 0, lastTouched: "2026-05-25", raise: true }), now))
+      .toBeCloseTo(25);
+  });
+  it("orders by score desc; parked penalized; staleness capped at 60", () => {
+    const a = thread({ id: "a", priority: 80, lastTouched: now });               // 56
+    const b = thread({ id: "b", priority: 80, lastTouched: now, raise: true });  // 76
+    const c = thread({ id: "c", priority: 80, lastTouched: now, status: "parked" }); // 31
+    const ordered = raiseQueue(person({ threads: [a, c, b] }), now).map((t) => t.id);
+    expect(ordered).toEqual(["b", "a", "c"]);
   });
 });
 

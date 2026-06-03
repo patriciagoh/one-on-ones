@@ -23,7 +23,7 @@ function migrate(raw: unknown): AppData {
   // redesign; the prototype has no production data, so we reseed on any
   // non-v2 blob rather than attempt a lossy field-by-field port.
   const data = raw as Partial<AppData> | null;
-  if (data && data.version === SCHEMA_VERSION && Array.isArray(data.people)) {
+  if (data && data.version === SCHEMA_VERSION && Array.isArray(data.people) && Array.isArray(data.templates)) {
     return data as AppData;
   }
   return seedData();
@@ -41,7 +41,7 @@ export function createStore(port: StoragePort = browserPort()): Store {
       const raw = port.get();
       const parsed = raw ? safeParse(raw) : null;
       const data = migrate(parsed);
-      if (!raw) port.set(JSON.stringify(data));
+      if (!raw || parsed !== data) port.set(JSON.stringify(data));
       return data;
     },
     save(data) { port.set(JSON.stringify(data)); },

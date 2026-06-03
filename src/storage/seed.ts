@@ -653,7 +653,7 @@ const maya: Person = {
       date: "2026-05-20",
       durationMin: 30,
       reportShare: 22,
-      areas: ["workload", "relationships"],
+      areas: ["workload"],
       actions: 2,
       summary: "Platform pod friction escalated. Brokering a sync. Manager-heavy session.",
     },

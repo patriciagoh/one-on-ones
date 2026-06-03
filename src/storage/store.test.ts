@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import { createStore, type StoragePort } from "./store";
-import { seedData } from "./seed";
 
 function memoryPort(initial?: string): StoragePort {
   let v = initial ?? null;
@@ -34,11 +33,26 @@ describe("store", () => {
     s.reset();
     expect(createStore(port).load().people.length).toBe(6);
   });
-  it("returns structuredClone-safe data (mutation does not affect internal store)", () => {
+  it("mutating returned data does not corrupt port storage", () => {
     const s = createStore(memoryPort());
     const d1 = s.load();
     d1.people[0].name = "mutated";
     const d2 = s.load();
     expect(d2.people[0].name).not.toBe("mutated");
+  });
+  it("each load() returns an independent object graph", () => {
+    const s = createStore(memoryPort());
+    const d1 = s.load();
+    const d2 = s.load();
+    expect(d1.people[0]).not.toBe(d2.people[0]);
+    d1.people[0].name = "mutated";
+    expect(d2.people[0].name).not.toBe("mutated");
+  });
+  it("migrated or reseeded blob is flushed to port storage", () => {
+    const v1 = JSON.stringify({ version: 1, people: [], areas: [], threads: [] });
+    const port = memoryPort(v1);
+    createStore(port).load();
+    const stored = JSON.parse(port.get()!);
+    expect(stored.version).toBe(2);
   });
 });

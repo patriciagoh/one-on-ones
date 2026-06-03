@@ -25,7 +25,7 @@ export function PrepDigest({ digest, person, now, onStart, startLabel }: PrepDig
   const { lead, raise, openMine, openTheirs, async: asyncItems } = digest;
 
   // Derive eyebrow date from the now prop (deterministic, no new Date() in render).
-  const eyebrow = `MEET · ${new Date(now).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+  const eyebrow = `MEET · ${new Date(now + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
 
   return (
     <section

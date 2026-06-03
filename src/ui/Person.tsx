@@ -97,7 +97,7 @@ function RaiseRow({
         ].join(" ")}
         style={{ minHeight: 24 }}
       >
-        {thread.raise ? "Raise ✓" : "Raise"}
+        {thread.raise ? "Raised" : "Raise"}
       </button>
     </li>
   );
@@ -242,6 +242,7 @@ export function Person({
   if (!person) {
     return (
       <div className="min-h-screen bg-oat flex flex-col">
+        <Masthead />
         <main id="main" tabIndex={-1} className="flex-1 flex flex-col items-center justify-center px-6 py-16">
           <h1 className="font-sans font-bold text-2xl text-ink mb-4">Person not found.</h1>
           <Link

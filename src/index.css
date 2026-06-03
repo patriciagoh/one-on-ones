@@ -1,0 +1,34 @@
+@import "matcha-oat-design-system/tokens.css";
+@import "matcha-oat-design-system/fonts.css";
+@import "./styles/tokens.ooo.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html { scroll-padding-top: 84px; } /* sticky masthead clearance (WCAG 2.4.x) */
+html, body, #root { min-height: 100%; }
+body { background: var(--oat); color: var(--ink); font-family: var(--sans); }
+
+/* Visible focus ring everywhere (WCAG 2.4.7). */
+:where(a, button, [role="button"], input, textarea, select, [tabindex]):focus-visible {
+  outline: var(--focus);
+  outline-offset: var(--focus-offset);
+}
+
+/* >=24px interactive targets (WCAG 2.5.8); buttons/role=button get a floor. */
+:where(button, [role="button"]) { min-height: 24px; }
+
+/* Reduced motion (WCAG 2.3.3). */
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* Skip link, shown on focus. */
+.skip-link {
+  position: absolute; left: 8px; top: -48px;
+  background: var(--paper); color: var(--matcha-deep);
+  padding: 8px 12px; border-radius: var(--r-sm); z-index: 50;
+  transition: top var(--dur-base) var(--ease);
+}
+.skip-link:focus { top: 8px; }

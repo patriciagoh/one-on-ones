@@ -3,8 +3,9 @@ import {
   stalenessTier, actionAgeTier, balanceHealth,
   coverageScore, bluntestSpot, cadenceStatus,
   raiseScore, raiseQueue,
+  openActions, openActionsByOwner, teamBlindSpots, attentionScore, attentionOrder,
 } from "./compute";
-import type { Person, Thread } from "./types";
+import type { Person, Thread, ActionItem } from "./types";
 
 const baseCoverage = { growth: 0, feedback: 0, workload: 0, wellbeing: 0, relationships: 0, recognition: 0 };
 function person(p: Partial<Person>): Person {
@@ -107,5 +108,43 @@ describe("balanceHealth", () => {
     expect(balanceHealth(55)).toEqual({ tier: "good", label: "Report-led" });
     expect(balanceHealth(78)).toEqual({ tier: "good", label: "Report-led" });
     expect(balanceHealth(79)).toEqual({ tier: "warn", label: "Hands-off" });
+  });
+});
+
+function action(a: Partial<ActionItem>): ActionItem {
+  return { id: "a", text: "", owner: "manager", status: "open", createdAt: "2026-06-01", ...a };
+}
+
+describe("actions", () => {
+  it("openActions returns open items oldest-first", () => {
+    const items = [action({ id: "new", createdAt: "2026-06-03" }),
+                   action({ id: "old", createdAt: "2026-05-01" }),
+                   action({ id: "done", status: "done" })];
+    expect(openActions(items).map((a) => a.id)).toEqual(["old", "new"]);
+  });
+  it("openActionsByOwner filters owner", () => {
+    const items = [action({ id: "m", owner: "manager" }), action({ id: "r", owner: "report" })];
+    expect(openActionsByOwner(items, "report").map((a) => a.id)).toEqual(["r"]);
+  });
+});
+
+describe("teamBlindSpots", () => {
+  it("ranks areas by team-average staleness with a cold count", () => {
+    const p1 = person({ coverage: { ...baseCoverage, relationships: 50 } });
+    const p2 = person({ coverage: { ...baseCoverage, relationships: 40 } });
+    const top = teamBlindSpots([p1, p2])[0];
+    expect(top.area).toBe("relationships");
+    expect(top.coldCount).toBe(2); // both >35
+  });
+});
+
+describe("attention", () => {
+  it("a stressed async item and overdue manager actions raise the score", () => {
+    const calm = person({ id: "calm", lastOneOnOne: "2026-06-03", cadenceDays: 7 });
+    const hot = person({ id: "hot", lastOneOnOne: "2026-06-03", cadenceDays: 7,
+      asyncAgenda: [{ id: "z", text: "", area: "growth", mood: "stressed", addedAt: "2026-06-02" }],
+      actions: [action({ createdAt: "2026-05-01" })] }); // >21d overdue manager action
+    expect(attentionScore(hot, "2026-06-04")).toBeGreaterThan(attentionScore(calm, "2026-06-04"));
+    expect(attentionOrder([calm, hot], "2026-06-04").map((p) => p.id)).toEqual(["hot", "calm"]);
   });
 });

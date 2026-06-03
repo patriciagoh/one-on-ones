@@ -47,6 +47,40 @@ export function raiseQueue(p: Person, now: string): Thread[] {
   return [...p.threads].sort((a, b) => raiseScore(b, now) - raiseScore(a, now));
 }
 
+export function openActions(items: ActionItem[]): ActionItem[] {
+  return items.filter((a) => a.status === "open")
+    .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
+}
+export function openActionsByOwner(items: ActionItem[], owner: ActionOwner): ActionItem[] {
+  return openActions(items).filter((a) => a.owner === owner);
+}
+
+export interface BlindSpot { area: AreaKey; avgDays: number; coldCount: number; }
+export function teamBlindSpots(people: Person[]): BlindSpot[] {
+  return AREA_KEYS.map((area) => {
+    const days = people.map((p) => p.coverage[area]);
+    const avgDays = days.reduce((s, n) => s + n, 0) / (people.length || 1);
+    const coldCount = days.filter((d) => d > 35).length;
+    return { area, avgDays, coldCount };
+  }).sort((a, b) => b.avgDays - a.avgDays);
+}
+
+export function attentionScore(p: Person, now: string): number {
+  const overdue = Math.max(0, daysSince(p.lastOneOnOne, now) - p.cadenceDays);
+  const recency = Number.isFinite(overdue) ? overdue : p.cadenceDays * 4; // never-met cap
+  const coverageGap = 100 - coverageScore(p);
+  const raiseFlags = p.threads.filter((t) => t.raise).length;
+  const overdueMgr = openActionsByOwner(p.actions, "manager")
+    .filter((a) => actionAgeTier(daysSince(a.createdAt, now)) === "cold").length;
+  const asyncCount = p.asyncAgenda.length;
+  const stressed = p.asyncAgenda.some((a) => a.mood === "stressed") ? 20 : 0;
+  return recency * 1.5 + coverageGap * 0.4 + raiseFlags * 8 + overdueMgr * 14 + asyncCount * 6 + stressed;
+}
+
+export function attentionOrder(people: Person[], now: string): Person[] {
+  return [...people].sort((a, b) => attentionScore(b, now) - attentionScore(a, now));
+}
+
 export type BalanceTier = "bad" | "warn" | "good" | "none";
 export interface Balance { tier: BalanceTier; label: string; }
 export function balanceHealth(share: number): Balance {

@@ -1,0 +1,19 @@
+:root {
+  /* Coverage signal scale (green -> amber -> rust). Always paired with a
+     word + shape in the UI so color is never load-bearing alone (WCAG 1.4.1). */
+  --ooo-fresh:   var(--matcha-deep); /* good   */
+  --ooo-warming: var(--matcha);
+  --ooo-stale:   var(--yolk-deep);   /* warn   */
+  --ooo-cold:    var(--bad);         /* alert  */
+
+  /* soft fills for the same tiers (chips, washes) */
+  --ooo-fresh-bg:   var(--matcha-tint);
+  --ooo-warming-bg: var(--matcha-tint); /* same tint as fresh; foreground token differentiates */
+  --ooo-stale-bg:   var(--yolk-tint);
+  --ooo-cold-bg:    var(--bad-bg);
+
+  /* Muted text for the dark PrepDigest panel. 70% term-text mixed into term-bg
+     yields #A39E93 → 5.82:1 contrast on term-bg (#26241D) — WCAG AA pass.
+     Use instead of opacity on the dark panel (opacity reduces effective contrast). */
+  --term-muted: color-mix(in srgb, var(--term-text) 70%, var(--term-bg));
+}

@@ -1,32 +1,58 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { createStore, type KeyValue } from './store'
+import { describe, it, expect } from "vitest";
+import { createStore, type StoragePort } from "./store";
 
-function memoryKV(): KeyValue {
-  const map = new Map<string, string>()
-  return {
-    get: (k) => map.get(k) ?? null,
-    set: (k, v) => void map.set(k, v),
-  }
+function memoryPort(initial?: string): StoragePort {
+  let v = initial ?? null;
+  return { get: () => v, set: (s) => { v = s; }, remove: () => { v = null; } };
 }
 
-describe('store', () => {
-  let kv: KeyValue
-  beforeEach(() => { kv = memoryKV() })
-
-  it('seeds on first load when storage is empty', () => {
-    const store = createStore(kv)
-    const data = store.load()
-    expect(data.people.length).toBeGreaterThan(0)
-    expect(data.areas.length).toBeGreaterThan(0)
-  })
-
-  it('persists saved data across new store instances', () => {
-    const store = createStore(kv)
-    const data = store.load()
-    data.people.push({ id: 'new', name: 'New', cadenceDays: 7, picture: [] })
-    store.save(data)
-
-    const reloaded = createStore(kv).load()
-    expect(reloaded.people.some((p) => p.id === 'new')).toBe(true)
-  })
-})
+describe("store", () => {
+  it("seeds when storage is empty", () => {
+    const s = createStore(memoryPort());
+    expect(s.load().people.length).toBe(6);
+    expect(s.load().version).toBe(2);
+  });
+  it("round-trips a save", () => {
+    const port = memoryPort();
+    const s = createStore(port);
+    const data = s.load();
+    data.people[0].name = "Renamed";
+    s.save(data);
+    expect(createStore(port).load().people[0].name).toBe("Renamed");
+  });
+  it("migrates a v1 blob by reseeding (no v1 people shape preserved)", () => {
+    const v1 = JSON.stringify({ version: 1, people: [], areas: [], threads: [] });
+    const s = createStore(memoryPort(v1));
+    expect(s.load().version).toBe(2);
+    expect(s.load().people.length).toBe(6);
+  });
+  it("reset clears storage and next load re-seeds", () => {
+    const port = memoryPort();
+    const s = createStore(port);
+    s.load();
+    s.reset();
+    expect(createStore(port).load().people.length).toBe(6);
+  });
+  it("mutating returned data does not corrupt port storage", () => {
+    const s = createStore(memoryPort());
+    const d1 = s.load();
+    d1.people[0].name = "mutated";
+    const d2 = s.load();
+    expect(d2.people[0].name).not.toBe("mutated");
+  });
+  it("each load() returns an independent object graph", () => {
+    const s = createStore(memoryPort());
+    const d1 = s.load();
+    const d2 = s.load();
+    expect(d1.people[0]).not.toBe(d2.people[0]);
+    d1.people[0].name = "mutated";
+    expect(d2.people[0].name).not.toBe("mutated");
+  });
+  it("migrated or reseeded blob is flushed to port storage", () => {
+    const v1 = JSON.stringify({ version: 1, people: [], areas: [], threads: [] });
+    const port = memoryPort(v1);
+    createStore(port).load();
+    const stored = JSON.parse(port.get()!);
+    expect(stored.version).toBe(2);
+  });
+});

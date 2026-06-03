@@ -1,174 +1,189 @@
-import { describe, it, expect } from 'vitest'
-import { raiseNext, areaCoverage, blindSpots, groupThreads } from './compute'
-import type { AppData, Thread } from './types'
+import { describe, it, expect } from "vitest";
+import {
+  stalenessTier, actionAgeTier, balanceHealth,
+  coverageScore, bluntestSpot, cadenceStatus,
+  raiseScore, raiseQueue,
+  openActions, openActionsByOwner, teamBlindSpots, attentionScore, attentionOrder,
+  prepDigest,
+} from "./compute";
+import type { Person, Thread, ActionItem } from "./types";
 
-const areas = [
-  { id: 'career', name: 'Career', cadenceDays: 28 },
-  { id: 'wellbeing', name: 'Wellbeing', cadenceDays: 7 },
-]
-const person = { id: 'p1', name: 'Alex', cadenceDays: 7, picture: [] }
-
-function thread(over: Partial<Thread>): Thread {
+const baseCoverage = { growth: 0, feedback: 0, workload: 0, wellbeing: 0, relationships: 0, recognition: 0 };
+function person(p: Partial<Person>): Person {
   return {
-    id: 'x', personId: 'p1', area: 'career', type: 'topic',
-    title: 't', state: 'active', createdAt: '2026-01-01', touches: [], ...over,
-  }
+    id: "x", name: "X", role: "", pronouns: "", initials: "X", hue: 0, tenureMonths: 1,
+    cadenceDays: 7, lastOneOnOne: null, nextScheduled: null,
+    talkTrend: [], sentimentTrend: [], coverage: { ...baseCoverage },
+    threads: [], actions: [], asyncAgenda: [], meetings: [], ...p,
+  };
 }
 
-const NOW = '2026-05-31'
+describe("stalenessTier", () => {
+  it("bands days into fresh/warming/stale/cold", () => {
+    expect(stalenessTier(0)).toBe("fresh");
+    expect(stalenessTier(10)).toBe("fresh");
+    expect(stalenessTier(11)).toBe("warming");
+    expect(stalenessTier(21)).toBe("warming");
+    expect(stalenessTier(22)).toBe("stale");
+    expect(stalenessTier(35)).toBe("stale");
+    expect(stalenessTier(36)).toBe("cold");
+    expect(stalenessTier(Infinity)).toBe("cold");
+  });
+});
 
-describe('raiseNext', () => {
-  it('ranks the most overdue active thread first', () => {
-    const data: AppData = {
-      people: [person], areas,
-      threads: [
-        thread({ id: 'fresh', area: 'wellbeing', touches: [{ date: '2026-05-28' }] }),
-        thread({ id: 'stale', area: 'career', touches: [{ date: '2026-03-01' }] }),
-      ],
-    }
-    const result = raiseNext(data, 'p1', NOW, 3)
-    expect(result[0].thread.id).toBe('stale')
-  })
+describe("actionAgeTier", () => {
+  it("bands action age", () => {
+    expect(actionAgeTier(0)).toBe("fresh");
+    expect(actionAgeTier(7)).toBe("fresh");
+    expect(actionAgeTier(8)).toBe("warming");
+    expect(actionAgeTier(21)).toBe("warming");
+    expect(actionAgeTier(22)).toBe("cold");
+  });
+});
 
-  it('excludes resolved and snoozed threads', () => {
-    const data: AppData = {
-      people: [person], areas,
-      threads: [
-        thread({ id: 'done', state: 'resolved', touches: [{ date: '2026-01-01' }] }),
-        thread({ id: 'snoozed', state: 'snoozed', snoozedUntil: '2026-12-01', touches: [{ date: '2026-01-01' }] }),
-        thread({ id: 'live', touches: [{ date: '2026-01-01' }] }),
-      ],
-    }
-    const result = raiseNext(data, 'p1', NOW, 5)
-    expect(result.map((r) => r.thread.id)).toEqual(['live'])
-  })
+describe("coverageScore", () => {
+  it("is 100 when every area is fresh today", () => {
+    expect(coverageScore(person({}))).toBe(100);
+  });
+  it("is 0 when every area is >=45d stale", () => {
+    const cov = { growth: 45, feedback: 50, workload: 60, wellbeing: 45, relationships: 90, recognition: 45 };
+    expect(coverageScore(person({ coverage: cov }))).toBe(0);
+  });
+  it("is ~50 when every area is 22.5d stale (mid-point linear interpolation)", () => {
+    const cov = { growth: 22.5, feedback: 22.5, workload: 22.5, wellbeing: 22.5, relationships: 22.5, recognition: 22.5 };
+    expect(coverageScore(person({ coverage: cov }))).toBe(50);
+  });
+});
 
-  it('annotates an overdue thread with a cadence reason', () => {
-    const data: AppData = {
-      people: [person], areas,
-      threads: [thread({ id: 'stale', area: 'career', touches: [{ date: '2026-03-01' }] })],
-    }
-    const [top] = raiseNext(data, 'p1', NOW, 3)
-    expect(top.reason).toMatch(/career/i)
-  })
+describe("bluntestSpot", () => {
+  it("returns the most-stale area", () => {
+    const cov = { ...baseCoverage, relationships: 47, growth: 12 };
+    expect(bluntestSpot(person({ coverage: cov }))).toBe("relationships");
+  });
+});
 
-  it('limits to N results', () => {
-    const data: AppData = {
-      people: [person], areas,
-      threads: [1, 2, 3, 4].map((n) => thread({ id: `t${n}`, touches: [{ date: '2026-01-01' }] })),
-    }
-    expect(raiseNext(data, 'p1', NOW, 2)).toHaveLength(2)
-  })
-})
+describe("cadenceStatus", () => {
+  it("ontrack within cadence", () => {
+    expect(cadenceStatus(person({ cadenceDays: 7, lastOneOnOne: "2026-06-01" }), "2026-06-04")).toBe("ontrack");
+  });
+  it("cold when never met", () => {
+    expect(cadenceStatus(person({ lastOneOnOne: null }), "2026-06-04")).toBe("cold");
+  });
+  // "2026-05-21" is 14 days before "2026-06-04" → ratio 14/7 = 2.0 → stale band (>1.5, ≤2.5)
+  // NOTE: plan had "2026-05-15" (20 days → ratio 2.86 → "cold"), which is inconsistent.
+  it("stale past 1.5x cadence", () => {
+    expect(cadenceStatus(person({ cadenceDays: 7, lastOneOnOne: "2026-05-21" }), "2026-06-04")).toBe("stale");
+  });
+});
 
-describe('areaCoverage', () => {
-  it('returns one row per area with a 12-week grid', () => {
-    const data = {
-      people: [person], areas,
-      threads: [
-        thread({ id: 'c', area: 'career', touches: [{ date: '2026-05-24' }] }),
-      ],
-    }
-    const rows = areaCoverage(data, 'p1', NOW, 12)
-    expect(rows).toHaveLength(2)
-    expect(rows[0].weeks).toHaveLength(12)
-  })
+function thread(t: Partial<Thread>): Thread {
+  return { id: "t", title: "", area: "growth", status: "open", priority: 0,
+           lastTouched: "2026-06-04", note: "", raise: false, ...t };
+}
 
-  it('marks the week of a touch as covered', () => {
-    const data = {
-      people: [person], areas,
-      threads: [thread({ id: 'c', area: 'career', touches: [{ date: '2026-05-24' }] })],
-    }
-    const career = areaCoverage(data, 'p1', NOW, 12).find((r) => r.area.id === 'career')!
-    // 2026-05-24 is 1 week before 2026-05-31
-    expect(career.weeks[1]).toBe(true)
-    expect(career.weeks[5]).toBe(false)
-  })
+describe("raiseQueue", () => {
+  const now = "2026-06-04";
+  it("scores priority*0.7 + min(staleness,60)*0.5 + raise(20) + parked(-25)", () => {
+    // priority=100, lastTouched=now → staleness=0, score = 70
+    expect(raiseScore(thread({ priority: 100, lastTouched: now }), now)).toBeCloseTo(70);
+    // priority=0, lastTouched="2026-05-25" (10 days before now), raise=true
+    // staleness = min(10,60) = 10; score = 0*0.7 + 10*0.5 + 20 = 25
+    // NOTE: plan comment "9 days → ~4.5" was incorrect; May 25→Jun 4 = 10 days → 25
+    expect(raiseScore(thread({ priority: 0, lastTouched: "2026-05-25", raise: true }), now))
+      .toBeCloseTo(25);
+  });
+  it("orders by score desc; parked penalized; staleness capped at 60", () => {
+    const a = thread({ id: "a", priority: 80, lastTouched: now });               // 56
+    const b = thread({ id: "b", priority: 80, lastTouched: now, raise: true });  // 76
+    const c = thread({ id: "c", priority: 80, lastTouched: now, status: "parked" }); // 31
+    const ordered = raiseQueue(person({ threads: [a, c, b] }), now).map((t) => t.id);
+    expect(ordered).toEqual(["b", "a", "c"]);
+  });
+});
 
-  it('flags an area as overdue when last touch exceeds its cadence', () => {
-    const data = {
-      people: [person], areas,
-      threads: [thread({ id: 'c', area: 'career', touches: [{ date: '2026-03-01' }] })],
-    }
-    const career = areaCoverage(data, 'p1', NOW, 12).find((r) => r.area.id === 'career')!
-    expect(career.overdue).toBe(true)
-  })
+describe("balanceHealth", () => {
+  it("0 share is no-data", () => {
+    expect(balanceHealth(0)).toEqual({ tier: "none", label: "No data" });
+  });
+  it("bands the report's airtime share", () => {
+    expect(balanceHealth(22)).toEqual({ tier: "bad", label: "You're driving" });
+    expect(balanceHealth(39)).toEqual({ tier: "bad", label: "You're driving" });
+    expect(balanceHealth(40)).toEqual({ tier: "warn", label: "Manager-heavy" });
+    expect(balanceHealth(54)).toEqual({ tier: "warn", label: "Manager-heavy" });
+    expect(balanceHealth(55)).toEqual({ tier: "good", label: "Report-led" });
+    expect(balanceHealth(78)).toEqual({ tier: "good", label: "Report-led" });
+    expect(balanceHealth(79)).toEqual({ tier: "warn", label: "Hands-off" });
+  });
+});
 
-  it('treats an area with no threads as overdue with null lastTouched', () => {
-    const data = { people: [person], areas, threads: [] }
-    const wb = areaCoverage(data, 'p1', NOW, 12).find((r) => r.area.id === 'wellbeing')!
-    expect(wb.lastTouched).toBeNull()
-    expect(wb.overdue).toBe(true)
-  })
+function action(a: Partial<ActionItem>): ActionItem {
+  return { id: "a", text: "", owner: "manager", status: "open", createdAt: "2026-06-01", ...a };
+}
 
-  it('picks the chronologically latest touch, not the one closest to now by absolute distance', () => {
-    // career has cadenceDays=28; touches are 91 days ago and 3 days ago
-    // lastTouched must be '2026-05-28' (the recent past date), not '2026-03-01'
-    // and 3 days < 28 days cadence, so overdue must be false
-    const data = {
-      people: [person], areas,
-      threads: [
-        thread({ id: 'c', area: 'career', touches: [{ date: '2026-03-01' }, { date: '2026-05-28' }] }),
-      ],
-    }
-    const career = areaCoverage(data, 'p1', NOW, 12).find((r) => r.area.id === 'career')!
-    expect(career.lastTouched).toBe('2026-05-28')
-    expect(career.overdue).toBe(false)
-  })
+describe("actions", () => {
+  it("openActions returns open items oldest-first", () => {
+    const items = [action({ id: "new", createdAt: "2026-06-03" }),
+                   action({ id: "old", createdAt: "2026-05-01" }),
+                   action({ id: "done", status: "done" })];
+    expect(openActions(items).map((a) => a.id)).toEqual(["old", "new"]);
+  });
+  it("openActionsByOwner filters owner", () => {
+    const items = [action({ id: "m", owner: "manager" }), action({ id: "r", owner: "report" })];
+    expect(openActionsByOwner(items, "report").map((a) => a.id)).toEqual(["r"]);
+  });
+});
 
-  it('treats a future-dated touch as the chronologically latest, not a recent past touch', () => {
-    // A mis-entered future date '2026-06-10' (10 days ahead) combined with a recent past date
-    // '2026-05-28' (3 days ago). The future date is farther by absolute distance but
-    // chronologically later — it must win as lastTouched.
-    const data = {
-      people: [person], areas,
-      threads: [
-        thread({ id: 'c', area: 'career', touches: [{ date: '2026-05-28' }, { date: '2026-06-10' }] }),
-      ],
-    }
-    const career = areaCoverage(data, 'p1', NOW, 12).find((r) => r.area.id === 'career')!
-    expect(career.lastTouched).toBe('2026-06-10')
-  })
-})
+describe("teamBlindSpots", () => {
+  it("ranks areas by team-average staleness with a cold count", () => {
+    const p1 = person({ coverage: { ...baseCoverage, relationships: 50 } });
+    const p2 = person({ coverage: { ...baseCoverage, relationships: 40 } });
+    const top = teamBlindSpots([p1, p2])[0];
+    expect(top.area).toBe("relationships");
+    expect(top.coldCount).toBe(2); // both >35
+  });
+});
 
-describe('blindSpots', () => {
-  it('flags a picture point whose area has no active thread', () => {
-    const personWithPicture = {
-      id: 'p1', name: 'Alex', cadenceDays: 7,
-      picture: [{ text: 'mentor a junior', area: 'career' }],
-    }
-    const data = { people: [personWithPicture], areas, threads: [] }
-    const spots = blindSpots(data, 'p1')
-    expect(spots).toHaveLength(1)
-    expect(spots[0].text).toBe('mentor a junior')
-  })
+describe("attention", () => {
+  it("a stressed async item and overdue manager actions raise the score", () => {
+    const calm = person({ id: "calm", lastOneOnOne: "2026-06-03", cadenceDays: 7 });
+    const hot = person({ id: "hot", lastOneOnOne: "2026-06-03", cadenceDays: 7,
+      asyncAgenda: [{ id: "z", text: "", area: "growth", mood: "stressed", addedAt: "2026-06-02" }],
+      actions: [action({ createdAt: "2026-05-01" })] }); // >21d overdue manager action
+    expect(attentionScore(hot, "2026-06-04")).toBeGreaterThan(attentionScore(calm, "2026-06-04"));
+    expect(attentionOrder([calm, hot], "2026-06-04").map((p) => p.id)).toEqual(["hot", "calm"]);
+  });
+  it("never-met person outranks a long-overdue person (recency isolation)", () => {
+    const now = "2026-06-04";
+    // 'overdue' last met 60 days ago — far past cadence (overdueDays = 53), no stress, no flags
+    const overdue = person({ id: "overdue", lastOneOnOne: "2026-04-05", cadenceDays: 7 });
+    // 'never' differs ONLY in lastOneOnOne: null — never met
+    const never = person({ id: "never", lastOneOnOne: null, cadenceDays: 7 });
+    // With the bug: never-met cap is cadenceDays*4=28 < 53 → never ranks LOWER than overdue (score 42 vs 79.5).
+    // After fix: never-met is treated as 90d overdue → score 135 > 79.5 → never ranks higher.
+    expect(attentionScore(never, now)).toBeGreaterThan(attentionScore(overdue, now));
+    expect(attentionOrder([overdue, never], now).map((p) => p.id)).toEqual(["never", "overdue"]);
+  });
+});
 
-  it('does not flag a picture point whose area has an active thread', () => {
-    const personWithPicture = {
-      id: 'p1', name: 'Alex', cadenceDays: 7,
-      picture: [{ text: 'mentor a junior', area: 'career' }],
-    }
-    const data = {
-      people: [personWithPicture], areas,
-      threads: [thread({ id: 'c', area: 'career', state: 'active' })],
-    }
-    expect(blindSpots(data, 'p1')).toHaveLength(0)
-  })
-})
-
-describe('groupThreads', () => {
-  it('splits active open-loops and commitments and lists resolved', () => {
-    const data = {
-      people: [person], areas,
-      threads: [
-        thread({ id: 'loop', type: 'open-loop', state: 'active' }),
-        thread({ id: 'commit', type: 'commitment', owner: 'you', state: 'active' }),
-        thread({ id: 'done', type: 'topic', state: 'resolved' }),
-      ],
-    }
-    const g = groupThreads(data, 'p1')
-    expect(g.openLoops.map((t) => t.id)).toEqual(['loop'])
-    expect(g.commitments.map((t) => t.id)).toEqual(['commit'])
-    expect(g.resolved.map((t) => t.id)).toEqual(['done'])
-  })
-})
+describe("prepDigest lead selection", () => {
+  const now = "2026-06-04";
+  it("1) leads with a stressed async item when present", () => {
+    const p = person({ asyncAgenda: [{ id: "s", text: "swamped", area: "workload", mood: "stressed", addedAt: now }] });
+    expect(prepDigest(p, now).lead.kind).toBe("async");
+  });
+  it("2) else leads with coldest area when >35d", () => {
+    const p = person({ coverage: { ...baseCoverage, relationships: 47 } });
+    const lead = prepDigest(p, now).lead;
+    expect(lead.kind).toBe("cold-area");
+    if (lead.kind === "cold-area") expect(lead.area).toBe("relationships");
+  });
+  it("3) else leads with the top raise-queue thread", () => {
+    const p = person({ threads: [thread({ id: "t1", priority: 90, raise: true, lastTouched: now })] });
+    const lead = prepDigest(p, now).lead;
+    expect(lead.kind).toBe("thread");
+    if (lead.kind === "thread") expect(lead.thread.id).toBe("t1");
+  });
+  it("4) else falls back to protect-the-relationship", () => {
+    expect(prepDigest(person({}), now).lead.kind).toBe("relationship");
+  });
+});

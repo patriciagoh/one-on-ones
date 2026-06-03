@@ -8,7 +8,9 @@ import {
   raiseQueue,
   stalenessTier,
   balanceHealth,
+  coverageScore,
 } from "../domain/compute";
+import { daysSince } from "../domain/time";
 import { Avatar } from "./atoms/Avatar";
 import { AreaTag } from "./atoms/AreaTag";
 import { CoverageRadar } from "./atoms/CoverageRadar";
@@ -45,9 +47,7 @@ function RaiseRow({
   now: string;
   onToggleRaise: (id: string) => void;
 }) {
-  const tier = stalenessTier(
-    Math.round((Date.parse(now) - Date.parse(thread.lastTouched)) / 86_400_000),
-  );
+  const tier = stalenessTier(daysSince(thread.lastTouched, now));
   const sig = SIGNAL[tier];
 
   // Why caption: raised flag or priority band or staleness
@@ -119,7 +119,7 @@ function TemplateCard({
       className="block bg-paper border border-line rounded-lg p-3 hover:border-matcha-deep transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-matcha-deep focus-visible:ring-offset-2"
     >
       <div className="flex items-center gap-2 mb-1.5">
-        <AreaTag area={template.primaryArea} variant="tint" />
+        <AreaTag area={template.primaryArea} variant="tint" aria-hidden={true} />
       </div>
       <p className="font-sans font-semibold text-sm text-ink leading-snug mb-1">
         {template.name}
@@ -291,14 +291,6 @@ export function Person({
               · meaningful 1:1s
             </span>
           </div>
-          <nav aria-label="Site navigation">
-            <Link
-              to="/"
-              className="font-mono text-xs text-matcha-deep hover:text-matcha transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-matcha-deep rounded-sm px-1"
-            >
-              ← all reports
-            </Link>
-          </nav>
         </div>
       </header>
 
@@ -372,6 +364,24 @@ export function Person({
               <h2 className="font-mono text-xs text-muted uppercase tracking-wide mb-3">
                 Coverage
               </h2>
+              {/* Numeric coverage score: ≥75 = high, ≥50 = fair, else low */}
+              {(() => {
+                const score = coverageScore(person);
+                const tier = score >= 75 ? "high" : score >= 50 ? "fair" : "low";
+                const color =
+                  tier === "high"
+                    ? "var(--ooo-fresh)"
+                    : tier === "fair"
+                      ? "var(--ooo-stale)"
+                      : "var(--ooo-cold)";
+                return (
+                  <p className="font-mono text-xs mb-2 text-center" style={{ color }}>
+                    <span className="font-bold">{score}</span>
+                    {" / "}
+                    <span>{tier}</span>
+                  </p>
+                );
+              })()}
               <div className="flex justify-center">
                 <CoverageRadar
                   coverage={person.coverage}
@@ -488,8 +498,8 @@ export function Person({
                 </h2>
                 <div className="bg-paper border border-line rounded-lg px-4">
                   <ul role="list">
-                    {meetingsDesc.map((meeting) => (
-                      <HistoryRow key={meeting.date} meeting={meeting} />
+                    {meetingsDesc.map((meeting, i) => (
+                      <HistoryRow key={i} meeting={meeting} />
                     ))}
                   </ul>
                 </div>

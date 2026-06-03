@@ -10,6 +10,9 @@ interface PrepDigestProps {
   now: string;
   /** Called when the user activates "Start 1:1". Screens wire this to navigation. */
   onStart?: () => void;
+  /** Override aria-label on the Start 1:1 button so it can be differentiated from other
+   *  "Start 1:1" controls on the same page. Defaults to "Start 1:1 with {name} from prep digest". */
+  startLabel?: string;
 }
 
 /**
@@ -19,7 +22,7 @@ interface PrepDigestProps {
  * Dark panel uses bg-term-bg / text-term-text — warm dark, not black.
  * Colors are always paired with a word (WCAG 1.4.1).
  */
-export function PrepDigest({ digest, person, now, onStart }: PrepDigestProps) {
+export function PrepDigest({ digest, person, now, onStart, startLabel }: PrepDigestProps) {
   const { lead, raise, openMine, openTheirs, async: asyncItems } = digest;
 
   // Derive eyebrow date from the now prop (deterministic, no new Date() in render).
@@ -119,7 +122,7 @@ export function PrepDigest({ digest, person, now, onStart }: PrepDigestProps) {
           type="button"
           onClick={onStart}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-md font-sans font-semibold text-sm bg-matcha-deep text-paper transition-colors"
-          aria-label={`Start 1:1 with ${person.name}`}
+          aria-label={startLabel ?? `Start 1:1 with ${person.name} from prep digest`}
         >
           Start 1:1
         </button>

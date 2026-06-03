@@ -14,6 +14,11 @@ interface CoverageRadarProps {
   size?: number;
 }
 
+/** Half-padding added around the SVG so axis-tip hotspot buttons stay within
+ *  the container box and are never clipped by an overflow-hidden ancestor.
+ *  Must be ≥ half the button size (12) — we use 14 to give a 2px cushion. */
+const RADAR_PADDING = 14;
+
 /**
  * Six-spoke radar chart where each axis = a conversation area, and the spoke
  * length = how fresh that area is (full = covered recently, short = stale).
@@ -23,10 +28,13 @@ interface CoverageRadarProps {
  *   - When onSelectArea is provided, 6 focusable <button> hotspots (≥24px)
  *     are rendered, each labelled with area + tier + days. The selected area
  *     gets a visible ring and aria-pressed="true".
+ *   - In interactive mode the container expands by RADAR_PADDING on each side
+ *     so buttons at the top/bottom axes are never clipped by overflow-hidden.
  *
  * Color for each spoke comes from SIGNAL[tier].cssVar (a CSS var, not a hex
  * literal), satisfying the token guardrail.
  */
+
 export function CoverageRadar({
   coverage,
   onSelectArea,
@@ -53,7 +61,8 @@ export function CoverageRadar({
     // Full-length axis endpoint (for the guide line)
     const ax = cx + maxR * Math.cos(angles[i]);
     const ay = cy + maxR * Math.sin(angles[i]);
-    // Hotspot centre (just outside full-radius, for the button)
+    // Hotspot centre in SVG coordinate space (origin = SVG top-left).
+    // Buttons are positioned in the padded container space by adding RADAR_PADDING.
     const hotR = maxR + 14;
     const hx = cx + hotR * Math.cos(angles[i]);
     const hy = cy + hotR * Math.sin(angles[i]);
@@ -77,8 +86,14 @@ export function CoverageRadar({
     return pts;
   });
 
+  // In interactive mode, expand the container by RADAR_PADDING on each side so
+  // the 24px hotspot buttons at the axis tips are fully inside the box.
+  // In static mode the padding is 0 — no visual change.
+  const pad = onSelectArea ? RADAR_PADDING : 0;
+  const containerSize = size + pad * 2;
+
   return (
-    <div className="relative inline-block" style={{ width: size, height: size }}>
+    <div className="relative inline-block" style={{ width: containerSize, height: containerSize }}>
       <svg
         role="img"
         aria-label={ariaLabel}
@@ -86,6 +101,7 @@ export function CoverageRadar({
         height={size}
         viewBox={`0 0 ${size} ${size}`}
         aria-hidden={onSelectArea ? "true" : undefined}
+        style={pad ? { margin: pad } : undefined}
       >
         {/* Grid rings */}
         {hexRings.map((pts, ri) => (
@@ -133,8 +149,10 @@ export function CoverageRadar({
 
         {/* Area labels at axis endpoints */}
         {areas.map(({ area, ax, ay, sig }, i) => {
-          // Nudge labels outward past the guide ring
-          const labelR = maxR + 8;
+          // Place labels between the outer guide ring and the hotspot buttons
+          // so they don't render directly behind the button hit area.
+          // maxR * 0.88 sits inside the outer ring (at maxR) with ~6px gap.
+          const labelR = maxR * 0.88;
           const lx = cx + labelR * Math.cos(angles[i]);
           const ly = cy + labelR * Math.sin(angles[i]);
           // Horizontal alignment: left side → end, right side → start, top/bottom → middle
@@ -193,8 +211,9 @@ export function CoverageRadar({
             style={{
               width: btnSize,
               height: btnSize,
-              left: hx - btnSize / 2,
-              top: hy - btnSize / 2,
+              // Shift by pad so coordinates align with the SVG inside the padded container.
+              left: hx - btnSize / 2 + pad,
+              top: hy - btnSize / 2 + pad,
               backgroundColor: isSelected ? sig.cssVar : "transparent",
               border: `2px solid ${sig.cssVar}`,
               opacity: isSelected ? 1 : 0.7,

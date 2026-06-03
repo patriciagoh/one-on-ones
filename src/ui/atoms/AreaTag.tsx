@@ -16,7 +16,7 @@ interface AreaTagProps {
 export function AreaTag({ area, variant = "tint" }: AreaTagProps) {
   const variantClass =
     variant === "muted"
-      ? "bg-neutral-bg text-ink-2"
+      ? "bg-neutral-bg text-neutral"
       : "bg-matcha-tint text-matcha-deep";
 
   return (

@@ -2,7 +2,7 @@ import React from "react";
 import type { AreaKey } from "../../domain/types";
 import { AREA_KEYS, AREA_LABELS } from "../../domain/types";
 import { stalenessTier } from "../../domain/compute";
-import { SIGNAL } from "./signal";
+import { SIGNAL, ShapeGlyph } from "./signal";
 
 interface CoverageStripProps {
   coverage: Record<AreaKey, number>;
@@ -22,6 +22,9 @@ interface CoverageStripProps {
  *
  * Accessibility: the wrapper has role="img" and an aria-label that names the
  * worst area, giving AT users the key takeaway without needing to read all six.
+ * Per-segment child divs intentionally omit aria-label — the role="img" wrapper
+ * flattens its subtree for AT, so per-child labels would be unreachable anyway.
+ * The title attribute is kept for mouse tooltips.
  */
 export function CoverageStrip({
   coverage,
@@ -52,74 +55,17 @@ export function CoverageStrip({
             key={area}
             className="flex flex-col items-center gap-0.5 flex-1"
             title={segmentLabel}
-            aria-label={segmentLabel}
           >
             {/* Coloured bar */}
             <div
               style={{ height: segmentHeight, backgroundColor: sig.cssVar }}
               className="w-full rounded-sm"
             />
-            {/* Shape glyph — color-not-alone (WCAG 1.4.1) */}
-            <ShapeGlyph shape={sig.shape} cssVar={sig.cssVar} size={6} />
+            {/* Shape glyph — color-not-alone (WCAG 1.4.1). Size 6 matches prior visual. */}
+            <ShapeGlyph tier={tier} size={6} />
           </div>
         );
       })}
     </div>
-  );
-}
-
-/** Renders the tier shape as a tiny inline element using the signal CSS var. */
-function ShapeGlyph({
-  shape,
-  cssVar,
-  size,
-}: {
-  shape: string;
-  cssVar: string;
-  size: number;
-}) {
-  const style: React.CSSProperties = { width: size, height: size };
-
-  if (shape === "circle") {
-    return (
-      <span
-        className="inline-block rounded-pill"
-        style={{ ...style, backgroundColor: cssVar }}
-      />
-    );
-  }
-  if (shape === "ring") {
-    return (
-      <span
-        className="inline-block rounded-pill"
-        style={{ ...style, border: `1.5px solid ${cssVar}`, backgroundColor: "transparent" }}
-      />
-    );
-  }
-  if (shape === "diamond") {
-    const inner = Math.round(size * 0.75);
-    return (
-      <span
-        className="inline-flex items-center justify-center"
-        style={style}
-      >
-        <span
-          className="inline-block"
-          style={{
-            width: inner,
-            height: inner,
-            backgroundColor: cssVar,
-            transform: "rotate(45deg)",
-          }}
-        />
-      </span>
-    );
-  }
-  // square
-  return (
-    <span
-      className="inline-block rounded-sm"
-      style={{ ...style, backgroundColor: cssVar }}
-    />
   );
 }

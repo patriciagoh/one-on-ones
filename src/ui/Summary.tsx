@@ -61,7 +61,7 @@ export function Summary({ data, personId }: SummaryProps) {
       <div className="min-h-screen bg-oat">
         <Masthead />
         <main id="main" tabIndex={-1} className="max-w-content mx-auto px-6 py-16 flex flex-col items-center">
-          <p className="font-sans text-lg text-ink mb-4">Person not found.</p>
+          <h1 className="font-sans font-bold text-2xl text-ink mb-4">Person not found.</h1>
           <Link
             to="/"
             className="font-mono text-sm text-matcha-deep hover:text-matcha transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-matcha-deep rounded-sm px-1"
@@ -81,7 +81,7 @@ export function Summary({ data, personId }: SummaryProps) {
       <div className="min-h-screen bg-oat">
         <Masthead />
         <main id="main" tabIndex={-1} className="max-w-content mx-auto px-6 py-16 flex flex-col items-center">
-          <p className="font-sans text-lg text-ink mb-2">No meetings yet with {person.name}.</p>
+          <h1 className="font-sans font-bold text-2xl text-ink mb-2">No meetings yet with {person.name}.</h1>
           <p className="font-mono text-sm text-muted mb-6">Start a 1:1 to see a summary here.</p>
           <Link
             to={`/person/${personId}`}

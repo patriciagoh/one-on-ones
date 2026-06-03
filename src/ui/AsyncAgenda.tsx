@@ -23,7 +23,7 @@ const MOOD_LABELS: Record<Mood, string> = {
 function moodCssVar(mood: Mood): string {
   switch (mood) {
     case "energized": return "var(--ooo-fresh)";
-    case "neutral":   return "var(--matcha)";
+    case "neutral":   return "var(--matcha-deep)"; // --matcha (3.57:1) fails AA; deep is 5.62:1
     case "unsure":    return "var(--ooo-stale)";
     case "stressed":  return "var(--ooo-cold)";
   }

@@ -42,11 +42,6 @@ export function ActionLedger({ actions, onToggle, now }: ActionLedgerProps) {
         <h2 className="font-sans font-semibold text-sm text-ink uppercase tracking-wide">
           Open loops
         </h2>
-        <div className="flex gap-3 font-mono text-xs text-muted uppercase tracking-wide" aria-hidden="true">
-          <span>Mine</span>
-          <span>Report</span>
-          <span>Close</span>
-        </div>
       </div>
 
       {open.length === 0 && (
@@ -118,6 +113,8 @@ function ActionRow({
   return (
     <li className="flex items-start gap-2 py-1.5 px-2 rounded-sm bg-paper border border-line">
       {/* Checkbox button — min 24px, role=checkbox */}
+      {/* aria-checked is always false for open items: toggling moves the item into the
+          done disclosure on re-render, so a checked-but-still-open state never exists. */}
       <button
         type="button"
         role="checkbox"

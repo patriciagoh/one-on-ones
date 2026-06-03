@@ -6,6 +6,8 @@ import type { PrepDigest as PrepDigestData } from "../domain/compute";
 interface PrepDigestProps {
   digest: PrepDigestData;
   person: Person;
+  /** ISO date string used for the eyebrow date. Pass new Date().toISOString() from the screen. */
+  now: string;
   /** Called when the user activates "Start 1:1". Screens wire this to navigation. */
   onStart?: () => void;
 }
@@ -17,12 +19,11 @@ interface PrepDigestProps {
  * Dark panel uses bg-term-bg / text-term-text — warm dark, not black.
  * Colors are always paired with a word (WCAG 1.4.1).
  */
-export function PrepDigest({ digest, person, onStart }: PrepDigestProps) {
+export function PrepDigest({ digest, person, now, onStart }: PrepDigestProps) {
   const { lead, raise, openMine, openTheirs, async: asyncItems } = digest;
 
-  // Format a short "today-ish" date string: e.g. "Jun 4"
-  const today = new Date();
-  const eyebrow = `MEET · ${today.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+  // Derive eyebrow date from the now prop (deterministic, no new Date() in render).
+  const eyebrow = `MEET · ${new Date(now).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
 
   return (
     <section
@@ -32,7 +33,8 @@ export function PrepDigest({ digest, person, onStart }: PrepDigestProps) {
     >
       {/* Eyebrow */}
       <div className="px-5 pt-4 pb-0">
-        <p className="font-mono text-xs uppercase tracking-widest" style={{ color: "var(--term-text)", opacity: 0.55 }}>
+        {/* color: var(--term-muted) — 5.82:1 on term-bg, WCAG AA pass for small text */}
+        <p className="font-mono text-xs uppercase tracking-widest" style={{ color: "var(--term-muted)" }}>
           {eyebrow}
         </p>
       </div>
@@ -42,14 +44,16 @@ export function PrepDigest({ digest, person, onStart }: PrepDigestProps) {
         <LeadHeadline lead={lead} personName={person.name} />
       </div>
 
-      {/* 3-up stat row */}
+      {/* 3-up stat row — intentionally non-interactive summary stats (display only).
+          The Start 1:1 button below is this panel's only action. */}
       <div
         className="grid grid-cols-3 gap-px"
-        style={{ borderTop: "1px solid var(--term-line, rgba(255,255,255,0.1))" }}
+        style={{ borderTop: "1px solid var(--term-line)" }}
       >
         {/* Start with… */}
         <div className="px-4 py-3">
-          <p className="font-mono text-xs uppercase tracking-wide mb-1.5" style={{ color: "var(--term-text)", opacity: 0.5 }}>
+          {/* color: var(--term-muted) — 5.82:1 on term-bg, WCAG AA pass for small text */}
+          <p className="font-mono text-xs uppercase tracking-wide mb-1.5" style={{ color: "var(--term-muted)" }}>
             Start with
           </p>
           {raise.length > 0 ? (
@@ -61,7 +65,7 @@ export function PrepDigest({ digest, person, onStart }: PrepDigestProps) {
               ))}
             </ul>
           ) : (
-            <p className="text-xs" style={{ color: "var(--term-text)", opacity: 0.6 }}>
+            <p className="text-xs" style={{ color: "var(--term-muted)" }}>
               No threads flagged
             </p>
           )}
@@ -69,14 +73,15 @@ export function PrepDigest({ digest, person, onStart }: PrepDigestProps) {
 
         {/* Open loops count */}
         <div className="px-4 py-3">
-          <p className="font-mono text-xs uppercase tracking-wide mb-1.5" style={{ color: "var(--term-text)", opacity: 0.5 }}>
+          {/* color: var(--term-muted) — 5.82:1 on term-bg, WCAG AA pass for small text */}
+          <p className="font-mono text-xs uppercase tracking-wide mb-1.5" style={{ color: "var(--term-muted)" }}>
             Open loops
           </p>
           <div className="flex items-baseline gap-2">
             <span className="font-mono text-lg font-bold leading-none" style={{ color: "var(--term-text)" }}>
               {openMine.length}
             </span>
-            <span className="text-xs" style={{ color: "var(--term-text)", opacity: 0.6 }}>
+            <span className="text-xs" style={{ color: "var(--term-muted)" }}>
               mine
             </span>
           </div>
@@ -84,7 +89,7 @@ export function PrepDigest({ digest, person, onStart }: PrepDigestProps) {
             <span className="font-mono text-lg font-bold leading-none" style={{ color: "var(--term-text)" }}>
               {openTheirs.length}
             </span>
-            <span className="text-xs" style={{ color: "var(--term-text)", opacity: 0.6 }}>
+            <span className="text-xs" style={{ color: "var(--term-muted)" }}>
               theirs
             </span>
           </div>
@@ -92,13 +97,14 @@ export function PrepDigest({ digest, person, onStart }: PrepDigestProps) {
 
         {/* Async count */}
         <div className="px-4 py-3">
-          <p className="font-mono text-xs uppercase tracking-wide mb-1.5" style={{ color: "var(--term-text)", opacity: 0.5 }}>
+          {/* color: var(--term-muted) — 5.82:1 on term-bg, WCAG AA pass for small text */}
+          <p className="font-mono text-xs uppercase tracking-wide mb-1.5" style={{ color: "var(--term-muted)" }}>
             From them
           </p>
           <span className="font-mono text-lg font-bold leading-none" style={{ color: "var(--term-text)" }}>
             {asyncItems.length}
           </span>
-          <span className="text-xs ml-2" style={{ color: "var(--term-text)", opacity: 0.6 }}>
+          <span className="text-xs ml-2" style={{ color: "var(--term-muted)" }}>
             {asyncItems.length === 1 ? "item" : "items"}
           </span>
         </div>
@@ -107,7 +113,7 @@ export function PrepDigest({ digest, person, onStart }: PrepDigestProps) {
       {/* Start 1:1 CTA */}
       <div
         className="px-5 py-4"
-        style={{ borderTop: "1px solid var(--term-line, rgba(255,255,255,0.1))" }}
+        style={{ borderTop: "1px solid var(--term-line)" }}
       >
         <button
           type="button"
@@ -133,10 +139,11 @@ function LeadHeadline({ lead, personName }: { lead: PrepDigestData["lead"]; pers
         >
           &ldquo;{lead.item.text}&rdquo;
         </blockquote>
+        {/* Badge background: color-mix keeps us token-pure; no raw rgba. */}
         <span
           className="inline-block font-mono text-xs uppercase tracking-wide px-2 py-0.5 rounded-sm"
           style={{
-            backgroundColor: "rgba(255,255,255,0.1)",
+            backgroundColor: "color-mix(in srgb, var(--term-text) 12%, transparent)",
             color: "var(--term-text)",
           }}
         >
@@ -147,12 +154,16 @@ function LeadHeadline({ lead, personName }: { lead: PrepDigestData["lead"]; pers
   }
 
   if (lead.kind === "cold-area") {
+    // Render entire headline in term-text — the WORDS carry the meaning
+    // ("You haven't touched {area} in {N} days"), so WCAG 1.4.1 is satisfied
+    // without color tints. ooo-stale/ooo-cold fail on term-bg (~2.95:1 / ~2.29:1)
+    // so those inline colors have been removed.
     return (
       <p className="font-sans font-bold text-xl leading-tight" style={{ color: "var(--term-text)" }}>
         You haven&apos;t touched{" "}
-        <span style={{ color: "var(--ooo-stale)" }}>{AREA_LABELS[lead.area]}</span>
+        {AREA_LABELS[lead.area]}
         {" "}in{" "}
-        <span style={{ color: "var(--ooo-cold)" }}>{lead.days} days.</span>
+        {lead.days} days.
       </p>
     );
   }
@@ -163,7 +174,7 @@ function LeadHeadline({ lead, personName }: { lead: PrepDigestData["lead"]; pers
         <p className="font-sans font-bold text-xl leading-tight mb-1" style={{ color: "var(--term-text)" }}>
           {lead.thread.title}
         </p>
-        <p className="text-xs" style={{ color: "var(--term-text)", opacity: 0.65 }}>
+        <p className="text-xs" style={{ color: "var(--term-muted)" }}>
           {lead.thread.raise ? "Flagged to raise" : "Top priority thread"}
         </p>
       </div>

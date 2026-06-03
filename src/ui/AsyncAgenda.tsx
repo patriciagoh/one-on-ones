@@ -1,4 +1,4 @@
-import React, { useId, useRef, useState } from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import type { AreaKey, AsyncItem, Mood, Person } from "../domain/types";
 import { AREA_KEYS, AREA_LABELS } from "../domain/types";
 import { AreaTag } from "./atoms/AreaTag";
@@ -73,6 +73,14 @@ export function AsyncAgenda({ person, items, onAdd }: AsyncAgendaProps) {
   const [showForm, setShowForm] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Focus the textarea whenever the form is opened (showForm transitions false→true).
+  // useEffect runs after the DOM is painted so the element is guaranteed to be mounted.
+  useEffect(() => {
+    if (showForm) {
+      textareaRef.current?.focus();
+    }
+  }, [showForm]);
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = text.trim();
@@ -95,8 +103,6 @@ export function AsyncAgenda({ person, items, onAdd }: AsyncAgendaProps) {
           type="button"
           onClick={() => {
             setShowForm((v) => !v);
-            // Move focus to the textarea after next paint
-            setTimeout(() => textareaRef.current?.focus(), 0);
           }}
           aria-expanded={showForm}
           aria-controls={`${formId}-add-form`}

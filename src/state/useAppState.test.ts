@@ -143,6 +143,7 @@ describe("reducers", () => {
       reportShare: 60,
       areas: ["growth"],
       summary: "good talk",
+      newActions: [{ text: "send promo doc", owner: "manager" }],
     });
 
     const p = next.people.find((x) => x.id === pid)!;
@@ -150,6 +151,15 @@ describe("reducers", () => {
     expect(p.meetings.at(-1)).toMatchObject({ reportShare: 60, date: "2026-06-04" });
     expect(p.coverage.growth).toBe(0);
     expect(p.lastOneOnOne).toBe("2026-06-04");
+
+    // newActions appended as open ActionItems
+    const added = p.actions.find((a) => a.text === "send promo doc");
+    expect(added).toBeDefined();
+    expect(added!.owner).toBe("manager");
+    expect(added!.status).toBe("open");
+
+    // MeetingRecord.actions counts commitments captured THIS meeting
+    expect(p.meetings.at(-1)!.actions).toBe(1);
   });
 
   it("saveMeeting appends reportShare to talkTrend", () => {
@@ -164,6 +174,7 @@ describe("reducers", () => {
       reportShare: 71,
       areas: ["feedback", "growth"],
       summary: "good talk",
+      newActions: [],
     });
 
     const p = next.people.find((x) => x.id === pid)!;
@@ -176,6 +187,7 @@ describe("reducers", () => {
     const pid = data.people[0].id;
     const originalMeetingCount = data.people[0].meetings.length;
     const originalCoverageGrowth = data.people[0].coverage.growth;
+    const originalActionsLength = data.people[0].actions.length;
 
     reducers.saveMeeting(data, {
       personId: pid,
@@ -184,9 +196,11 @@ describe("reducers", () => {
       reportShare: 60,
       areas: ["growth"],
       summary: "good talk",
+      newActions: [{ text: "send promo doc", owner: "manager" }],
     });
 
     expect(data.people[0].meetings.length).toBe(originalMeetingCount);
     expect(data.people[0].coverage.growth).toBe(originalCoverageGrowth);
+    expect(data.people[0].actions.length).toBe(originalActionsLength);
   });
 });

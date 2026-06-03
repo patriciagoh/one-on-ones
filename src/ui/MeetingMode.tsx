@@ -7,8 +7,7 @@ import React, {
   useState,
 } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import type { AppData, AreaKey, MeetingRecord } from "../domain/types";
-import { AREA_LABELS } from "../domain/types";
+import type { AppData, AreaKey } from "../domain/types";
 import { balanceHealth, raiseQueue } from "../domain/compute";
 import { AreaTag } from "./atoms/AreaTag";
 import { Avatar } from "./atoms/Avatar";
@@ -41,6 +40,7 @@ interface SaveMeetingInput {
   reportShare: number;
   areas: AreaKey[];
   summary: string;
+  newActions: { text: string; owner: "report" | "manager" }[];
 }
 
 interface MeetingModeProps {
@@ -87,16 +87,12 @@ export function MeetingMode({
   const person = data.people.find((p) => p.id === personId);
 
   // ── Not-found guard ────────────────────────────────────────────────────────
-  const headingRef = useRef<HTMLHeadingElement>(null);
-  useEffect(() => {
-    headingRef.current?.focus();
-  }, []);
-
   if (!person) {
     return (
       <div className="max-w-screen-md mx-auto px-6 py-12">
+        {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
         <h1
-          ref={headingRef}
+          autoFocus
           tabIndex={-1}
           className="font-sans font-bold text-2xl text-ink mb-4 focus-visible:outline-none"
         >
@@ -227,6 +223,13 @@ function MeetingModeInner({
   // setInterval ref — stored so we can clear it on unmount
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Ref kept in sync with holder so the interval callback reads the latest
+  // value without being stale from closure capture.
+  const holderRef = useRef(holder);
+  useEffect(() => {
+    holderRef.current = holder;
+  }, [holder]);
+
   // Start the interval once any tap target is activated (holder is set)
   useEffect(() => {
     if (intervalRef.current !== null) {
@@ -236,7 +239,7 @@ function MeetingModeInner({
 
     if (running && holder !== null) {
       intervalRef.current = setInterval(() => {
-        if (holder === "report") {
+        if (holderRef.current === "report") {
           setReportSeconds((s) => s + 1);
         } else {
           setManagerSeconds((s) => s + 1);
@@ -290,6 +293,7 @@ function MeetingModeInner({
   // ── Action items ─────────────────────────────────────────────────────────────
   const [actions, setActions] = useState<ActionEntry[]>([]);
   const [actionDraft, setActionDraft] = useState("");
+  const [ownerDraft, setOwnerDraft] = useState<"report" | "manager">("report");
 
   const handleAddAction = useCallback(
     (e: React.FormEvent) => {
@@ -298,11 +302,11 @@ function MeetingModeInner({
       if (!text) return;
       setActions((prev) => [
         ...prev,
-        { id: `local-${Date.now()}`, text, owner: "report" },
+        { id: `local-${Date.now()}`, text, owner: ownerDraft },
       ]);
       setActionDraft("");
     },
-    [actionDraft],
+    [actionDraft, ownerDraft],
   );
 
   // ── Focus heading on entry ────────────────────────────────────────────────────
@@ -347,6 +351,7 @@ function MeetingModeInner({
       reportShare: finalShare,
       areas,
       summary,
+      newActions: actions.map((a) => ({ text: a.text, owner: a.owner })),
     });
 
     // Navigate to summary after save
@@ -357,6 +362,7 @@ function MeetingModeInner({
     managerSeconds,
     agenda,
     stepNotes,
+    actions,
     person.id,
     person.name,
     now,
@@ -409,7 +415,7 @@ function MeetingModeInner({
           <span className="text-muted text-sm" aria-hidden="true">
             ·
           </span>
-          <span className="text-sm text-muted">6 reports</span>
+          <span className="text-sm text-muted">{data.people.length} reports</span>
         </nav>
       </header>
 
@@ -596,7 +602,7 @@ function MeetingModeInner({
             </div>
 
             {/* Visible nudge when manager is driving */}
-            {reportShare > 0 && reportShare < 45 && (
+            {reportShare > 0 && reportShare < 40 && (
               <p
                 className="mt-3 text-xs font-mono px-2 py-1.5 rounded-sm"
                 style={{
@@ -727,6 +733,42 @@ function MeetingModeInner({
                 rows={3}
                 className="w-full rounded-md border border-line bg-oat px-3 py-2 text-sm text-ink placeholder:text-muted resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-matcha-deep"
               />
+              {/* Owner toggle */}
+              <fieldset className="flex items-center gap-2">
+                <legend className="font-mono text-xs text-muted uppercase tracking-wide shrink-0">
+                  Owner
+                </legend>
+                <button
+                  type="button"
+                  aria-pressed={ownerDraft === "report"}
+                  onClick={() => setOwnerDraft("report")}
+                  className={[
+                    "px-3 py-1 rounded-md border text-xs font-sans font-medium transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-matcha-deep focus-visible:ring-offset-2",
+                    ownerDraft === "report"
+                      ? "border-matcha-deep bg-matcha-tint text-ink"
+                      : "border-line bg-paper text-muted hover:border-matcha-deep",
+                  ].join(" ")}
+                  style={{ minHeight: 28 }}
+                >
+                  Theirs
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={ownerDraft === "manager"}
+                  onClick={() => setOwnerDraft("manager")}
+                  className={[
+                    "px-3 py-1 rounded-md border text-xs font-sans font-medium transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-matcha-deep focus-visible:ring-offset-2",
+                    ownerDraft === "manager"
+                      ? "border-matcha-deep bg-matcha-tint text-ink"
+                      : "border-line bg-paper text-muted hover:border-matcha-deep",
+                  ].join(" ")}
+                  style={{ minHeight: 28 }}
+                >
+                  Mine
+                </button>
+              </fieldset>
               <button
                 type="submit"
                 className="w-full py-2 rounded-md border border-line-2 text-sm text-ink font-sans font-medium hover:border-matcha-deep transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-matcha-deep focus-visible:ring-offset-2"

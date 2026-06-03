@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import type { AppData, AsyncItem, MeetingRecord, Person } from "../domain/types";
+import type { ActionItem, ActionOwner, AppData, AsyncItem, MeetingRecord, Person } from "../domain/types";
 import { createStore, type Store } from "../storage/store";
 
 type NewAsync = Pick<AsyncItem, "text" | "area" | "mood">;
@@ -11,6 +11,7 @@ interface SaveMeetingInput {
   reportShare: number;
   areas: MeetingRecord["areas"];
   summary: string;
+  newActions: { text: string; owner: ActionOwner }[];
 }
 
 /** Map over the people array, replacing the person with the given id. */
@@ -92,12 +93,20 @@ export const reducers = {
       const coverage = { ...p.coverage };
       for (const area of input.areas) coverage[area] = 0;
 
+      const mapped: ActionItem[] = input.newActions.map((a, i) => ({
+        id: `act-${input.personId}-${input.date}-${i}`,
+        text: a.text,
+        owner: a.owner,
+        status: "open" as const,
+        createdAt: input.date,
+      }));
+
       const rec: MeetingRecord = {
         date: input.date,
         durationMin: input.durationMin,
         reportShare: input.reportShare,
         areas: input.areas,
-        actions: p.actions.filter((a) => a.status === "open").length,
+        actions: input.newActions.length,
         summary: input.summary,
       };
 
@@ -107,6 +116,7 @@ export const reducers = {
         lastOneOnOne: input.date,
         meetings: [...p.meetings, rec],
         talkTrend: [...p.talkTrend, input.reportShare],
+        actions: [...p.actions, ...mapped],
       };
     });
   },

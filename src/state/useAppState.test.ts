@@ -9,28 +9,41 @@ describe("reducers", () => {
   it("toggleAction closes an open action: status becomes 'done' and doneAt is set", () => {
     const data = seedData();
     // Sofia's first action is open; use it as a known-open seed action.
-    const person = data.people.find((p) => p.id === "p-sofia")!;
-    const id = person.actions.find((a) => a.status === "open")!.id;
+    const person = data.people.find((p) => p.id === "p-sofia");
+    expect(person).toBeDefined();
+    const openAction = person!.actions.find((a) => a.status === "open");
+    expect(openAction).toBeDefined();
+    const id = openAction!.id;
 
     const next = reducers.toggleAction(data, id, "2026-06-04");
-    const a = next.people.flatMap((p) => p.actions).find((a) => a.id === id)!;
+    const a = next.people.flatMap((p) => p.actions).find((a) => a.id === id);
+    expect(a).toBeDefined();
 
-    expect(a.status).toBe("done");
-    expect(a.doneAt).toBe("2026-06-04");
+    expect(a!.status).toBe("done");
+    expect(a!.doneAt).toBe("2026-06-04");
   });
 
   it("toggleAction reopens a done action: status becomes 'open' and doneAt is cleared", () => {
     const data = seedData();
     // First close it, then toggle again to reopen.
-    const person = data.people.find((p) => p.id === "p-sofia")!;
-    const id = person.actions.find((a) => a.status === "open")!.id;
+    const person = data.people.find((p) => p.id === "p-sofia");
+    expect(person).toBeDefined();
+    const openAction = person!.actions.find((a) => a.status === "open");
+    expect(openAction).toBeDefined();
+    const id = openAction!.id;
 
     const closed = reducers.toggleAction(data, id, "2026-06-04");
     const reopened = reducers.toggleAction(closed, id, "2026-06-05");
-    const a = reopened.people.flatMap((p) => p.actions).find((a) => a.id === id)!;
+    const a = reopened.people.flatMap((p) => p.actions).find((a) => a.id === id);
+    expect(a).toBeDefined();
 
-    expect(a.status).toBe("open");
-    expect(a.doneAt).toBeUndefined();
+    expect(a!.status).toBe("open");
+    expect(a!.doneAt).toBeUndefined();
+  });
+
+  it("toggleAction unknown id is a no-op", () => {
+    const data = seedData();
+    expect(reducers.toggleAction(data, "no-such-id", "2026-06-04")).toEqual(data);
   });
 
   it("toggleAction does not mutate the original data (immutability)", () => {
@@ -84,24 +97,35 @@ describe("reducers", () => {
   // -----------------------------------------------------------------------
   it("toggleRaise flips a thread's raise flag", () => {
     const data = seedData();
-    const t = data.people.flatMap((p) => p.threads)[0];
+    const allThreads = data.people.flatMap((p) => p.threads);
+    expect(allThreads[0]).toBeDefined();
+    const t = allThreads[0];
     const original = t.raise;
 
     const next = reducers.toggleRaise(data, t.id);
-    const flipped = next.people.flatMap((p) => p.threads).find((x) => x.id === t.id)!;
+    const flipped = next.people.flatMap((p) => p.threads).find((x) => x.id === t.id);
+    expect(flipped).toBeDefined();
 
-    expect(flipped.raise).toBe(!original);
+    expect(flipped!.raise).toBe(!original);
   });
 
   it("toggleRaise does not mutate the original data (immutability)", () => {
     const data = seedData();
-    const t = data.people.flatMap((p) => p.threads)[0];
+    const allThreads = data.people.flatMap((p) => p.threads);
+    expect(allThreads[0]).toBeDefined();
+    const t = allThreads[0];
     const original = t.raise;
 
     reducers.toggleRaise(data, t.id);
 
-    const stillOriginal = data.people.flatMap((p) => p.threads).find((x) => x.id === t.id)!;
-    expect(stillOriginal.raise).toBe(original);
+    const stillOriginal = data.people.flatMap((p) => p.threads).find((x) => x.id === t.id);
+    expect(stillOriginal).toBeDefined();
+    expect(stillOriginal!.raise).toBe(original);
+  });
+
+  it("toggleRaise unknown id is a no-op", () => {
+    const data = seedData();
+    expect(reducers.toggleRaise(data, "no-such-id")).toEqual(data);
   });
 
   // -----------------------------------------------------------------------

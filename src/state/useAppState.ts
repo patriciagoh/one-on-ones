@@ -1,5 +1,5 @@
-import { useCallback, useState } from "react";
-import type { AppData, AsyncItem, MeetingRecord } from "../domain/types";
+import { useCallback, useMemo, useState } from "react";
+import type { AppData, AsyncItem, MeetingRecord, Person } from "../domain/types";
 import { createStore, type Store } from "../storage/store";
 
 type NewAsync = Pick<AsyncItem, "text" | "area" | "mood">;
@@ -17,7 +17,7 @@ interface SaveMeetingInput {
 function mapPerson(
   data: AppData,
   id: string,
-  fn: (p: AppData["people"][number]) => AppData["people"][number],
+  fn: (p: Person) => Person,
 ): AppData {
   return { ...data, people: data.people.map((p) => (p.id === id ? fn(p) : p)) };
 }
@@ -52,7 +52,7 @@ export const reducers = {
   },
 
   /**
-   * Flip a thread's `raise` flag across all people.
+   * Find the thread by its (globally unique) ID across all people and flip its `raise` flag.
    */
   toggleRaise(data: AppData, threadId: string): AppData {
     return {
@@ -133,15 +133,18 @@ export function useAppState(store: Store = createStore()) {
     [store],
   );
 
-  return {
-    data,
-    toggleAction: (id: string, now: string) =>
-      apply(reducers.toggleAction(data, id, now)),
-    toggleRaise: (id: string) =>
-      apply(reducers.toggleRaise(data, id)),
-    addAsyncItem: (pid: string, item: NewAsync, now: string, id: string) =>
-      apply(reducers.addAsyncItem(data, pid, item, now, id)),
-    saveMeeting: (input: SaveMeetingInput) =>
-      apply(reducers.saveMeeting(data, input)),
-  };
+  return useMemo(
+    () => ({
+      data,
+      toggleAction: (id: string, now: string) =>
+        apply(reducers.toggleAction(data, id, now)),
+      toggleRaise: (id: string) =>
+        apply(reducers.toggleRaise(data, id)),
+      addAsyncItem: (pid: string, item: NewAsync, now: string, id: string) =>
+        apply(reducers.addAsyncItem(data, pid, item, now, id)),
+      saveMeeting: (input: SaveMeetingInput) =>
+        apply(reducers.saveMeeting(data, input)),
+    }),
+    [data, apply],
+  );
 }

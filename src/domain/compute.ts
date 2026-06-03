@@ -65,16 +65,26 @@ export function teamBlindSpots(people: Person[]): BlindSpot[] {
   }).sort((a, b) => b.avgDays - a.avgDays);
 }
 
+// Attention-score weights. overdueMgr/asyncItem/stressed are pinned by the handoff;
+// recency/coverageGap/raiseFlag are tuned so recency dominates, coverage gap is a
+// slow-burn signal, and a stressed async item is a strong amplifier.
+const ATTENTION_W = {
+  recency: 1.5, coverageGap: 0.4, raiseFlag: 8, overdueMgr: 14, asyncItem: 6, stressed: 20,
+} as const;
+
 export function attentionScore(p: Person, now: string): number {
-  const overdue = Math.max(0, daysSince(p.lastOneOnOne, now) - p.cadenceDays);
-  const recency = Number.isFinite(overdue) ? overdue : p.cadenceDays * 4; // never-met cap
+  // Never-met is the worst recency state: treat as maximally overdue rather than
+  // a small multiple of cadence (which would rank it below a long-overdue report).
+  const overdueDays = p.lastOneOnOne
+    ? Math.max(0, daysSince(p.lastOneOnOne, now) - p.cadenceDays)
+    : 90;
   const coverageGap = 100 - coverageScore(p);
   const raiseFlags = p.threads.filter((t) => t.raise).length;
   const overdueMgr = openActionsByOwner(p.actions, "manager")
     .filter((a) => actionAgeTier(daysSince(a.createdAt, now)) === "cold").length;
   const asyncCount = p.asyncAgenda.length;
-  const stressed = p.asyncAgenda.some((a) => a.mood === "stressed") ? 20 : 0;
-  return recency * 1.5 + coverageGap * 0.4 + raiseFlags * 8 + overdueMgr * 14 + asyncCount * 6 + stressed;
+  const stressed = p.asyncAgenda.some((a) => a.mood === "stressed") ? ATTENTION_W.stressed : 0;
+  return overdueDays * ATTENTION_W.recency + coverageGap * ATTENTION_W.coverageGap + raiseFlags * ATTENTION_W.raiseFlag + overdueMgr * ATTENTION_W.overdueMgr + asyncCount * ATTENTION_W.asyncItem + stressed;
 }
 
 export function attentionOrder(people: Person[], now: string): Person[] {
@@ -113,7 +123,7 @@ export function prepDigest(p: Person, now: string): PrepDigest {
   const raise = raiseQueue(p, now).slice(0, 3);
   const coldKey = bluntestSpot(p);
   const coldDays = p.coverage[coldKey];
-  const lastShare = [...p.talkTrend].reverse().find((n) => n > 0) ?? 0;
+  const lastShare = p.talkTrend.findLast((n) => n > 0) ?? 0;
 
   let lead: Lead;
   const stressed = p.asyncAgenda.find((a) => a.mood === "stressed");

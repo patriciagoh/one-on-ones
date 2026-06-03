@@ -2,6 +2,7 @@ import type { ISO } from "./types";
 
 const MS_PER_DAY = 86_400_000;
 
+// General absolute day-delta helper (e.g. meeting-history date spans in the UI).
 export function daysBetween(a: ISO, b: ISO): number {
   return Math.round(Math.abs(Date.parse(a) - Date.parse(b)) / MS_PER_DAY);
 }

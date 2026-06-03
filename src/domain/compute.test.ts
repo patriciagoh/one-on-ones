@@ -49,6 +49,10 @@ describe("coverageScore", () => {
     const cov = { growth: 45, feedback: 50, workload: 60, wellbeing: 45, relationships: 90, recognition: 45 };
     expect(coverageScore(person({ coverage: cov }))).toBe(0);
   });
+  it("is ~50 when every area is 22.5d stale (mid-point linear interpolation)", () => {
+    const cov = { growth: 22.5, feedback: 22.5, workload: 22.5, wellbeing: 22.5, relationships: 22.5, recognition: 22.5 };
+    expect(coverageScore(person({ coverage: cov }))).toBe(50);
+  });
 });
 
 describe("bluntestSpot", () => {
@@ -147,6 +151,17 @@ describe("attention", () => {
       actions: [action({ createdAt: "2026-05-01" })] }); // >21d overdue manager action
     expect(attentionScore(hot, "2026-06-04")).toBeGreaterThan(attentionScore(calm, "2026-06-04"));
     expect(attentionOrder([calm, hot], "2026-06-04").map((p) => p.id)).toEqual(["hot", "calm"]);
+  });
+  it("never-met person outranks a long-overdue person (recency isolation)", () => {
+    const now = "2026-06-04";
+    // 'overdue' last met 60 days ago — far past cadence (overdueDays = 53), no stress, no flags
+    const overdue = person({ id: "overdue", lastOneOnOne: "2026-04-05", cadenceDays: 7 });
+    // 'never' differs ONLY in lastOneOnOne: null — never met
+    const never = person({ id: "never", lastOneOnOne: null, cadenceDays: 7 });
+    // With the bug: never-met cap is cadenceDays*4=28 < 53 → never ranks LOWER than overdue (score 42 vs 79.5).
+    // After fix: never-met is treated as 90d overdue → score 135 > 79.5 → never ranks higher.
+    expect(attentionScore(never, now)).toBeGreaterThan(attentionScore(overdue, now));
+    expect(attentionOrder([overdue, never], now).map((p) => p.id)).toEqual(["never", "overdue"]);
   });
 });
 

@@ -1,4 +1,3 @@
-import React from "react";
 import type { AreaKey } from "../../domain/types";
 import { AREA_KEYS, AREA_LABELS } from "../../domain/types";
 import { stalenessTier } from "../../domain/compute";
@@ -148,7 +147,7 @@ export function CoverageRadar({
         ))}
 
         {/* Area labels at axis endpoints */}
-        {areas.map(({ area, ax, ay, sig }, i) => {
+        {areas.map(({ area }, i) => {
           // Place labels between the outer guide ring and the hotspot buttons
           // so they don't render directly behind the button hit area.
           // maxR * 0.88 sits inside the outer ring (at maxR) with ~6px gap.
@@ -196,7 +195,7 @@ export function CoverageRadar({
       </svg>
 
       {/* Interactive hotspot buttons (overlaid on top of the SVG) */}
-      {onSelectArea && areas.map(({ area, days, tier, sig, hx, hy }) => {
+      {onSelectArea && areas.map(({ area, days, sig, hx, hy }) => {
         const isSelected = selectedArea === area;
         const btnLabel = `${AREA_LABELS[area]} — ${sig.label}, ${days} days`;
         // Position the 24px button centred on the hotspot coordinate

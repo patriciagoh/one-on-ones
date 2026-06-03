@@ -1,4 +1,3 @@
-import React from "react";
 import type { AreaKey } from "../../domain/types";
 import { AREA_LABELS } from "../../domain/types";
 

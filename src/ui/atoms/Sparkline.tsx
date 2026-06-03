@@ -1,5 +1,3 @@
-import React from "react";
-
 interface SparklineProps {
   /** Array of numeric values to plot. Sentiment is 1-5; talk% is 0-100. */
   values: number[];

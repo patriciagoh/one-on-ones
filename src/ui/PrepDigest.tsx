@@ -1,4 +1,3 @@
-import React from "react";
 import type { Person } from "../domain/types";
 import { AREA_LABELS } from "../domain/types";
 import type { PrepDigest as PrepDigestData } from "../domain/compute";

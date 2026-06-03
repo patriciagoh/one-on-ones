@@ -1,6 +1,5 @@
 // App shell — Task 4.9
 // HashRouter + routes + skip link. One useAppState() at the root; data flows down.
-import React from "react";
 import {
   HashRouter,
   Routes,

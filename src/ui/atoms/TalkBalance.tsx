@@ -1,4 +1,3 @@
-import React from "react";
 import { balanceHealth } from "../../domain/compute";
 
 interface TalkBalanceProps {

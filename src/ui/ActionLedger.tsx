@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import type { ActionItem } from "../domain/types";
 import { actionAgeTier } from "../domain/compute";
 import { daysSince } from "../domain/time";

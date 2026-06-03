@@ -1,7 +1,7 @@
 // Person screen — Task 4.6
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import type { AppData, AreaKey, AsyncItem, Mood, Thread, MeetingRecord, TemplateDef } from "../domain/types";
+import type { AppData, AreaKey, Mood, Thread, MeetingRecord, TemplateDef } from "../domain/types";
 import { AREA_LABELS } from "../domain/types";
 import {
   prepDigest,

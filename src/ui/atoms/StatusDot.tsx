@@ -1,4 +1,3 @@
-import React from "react";
 import type { StalenessTier } from "../../domain/compute";
 import { SIGNAL, ShapeGlyph } from "./signal";
 

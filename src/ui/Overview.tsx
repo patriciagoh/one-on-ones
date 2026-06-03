@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import type { AppData, Person } from "../domain/types";
 import { AREA_LABELS } from "../domain/types";
 import {
+  actionAgeTier,
   attentionOrder,
   bluntestSpot,
   cadenceStatus,
@@ -11,6 +12,7 @@ import {
   stalenessTier,
   teamBlindSpots,
   balanceHealth,
+  type BlindSpot,
 } from "../domain/compute";
 import { daysSince } from "../domain/time";
 import { Avatar } from "./atoms/Avatar";
@@ -24,6 +26,16 @@ import { SIGNAL } from "./atoms/signal";
 // ---------------------------------------------------------------------------
 
 type SortKey = "attention" | "overdue" | "name";
+
+// ---------------------------------------------------------------------------
+// Constants (module scope — not reallocated per render)
+// ---------------------------------------------------------------------------
+
+const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+  { key: "attention", label: "Needs attention" },
+  { key: "overdue", label: "Overdue" },
+  { key: "name", label: "Name" },
+];
 
 interface OverviewProps {
   data: AppData;
@@ -92,8 +104,7 @@ function StatTile({ label, value, sub }: StatTileProps) {
 // Coverage radar strip (team blind spots)
 // ---------------------------------------------------------------------------
 
-function CoverageRadarStrip({ people }: { people: Person[] }) {
-  const blindSpots = teamBlindSpots(people);
+function CoverageRadarStrip({ blindSpots }: { blindSpots: BlindSpot[] }) {
   const maxDays = Math.max(...blindSpots.map((b) => b.avgDays), 1);
 
   return (
@@ -159,23 +170,27 @@ function ReportCard({ person, now }: { person: Person; now: string }) {
   const bluntestDays = person.coverage[bluntest];
   const bluntestTier = stalenessTier(bluntestDays);
 
-  const topRaise = raiseQueue(person, now).find((t) => t.raise);
-  const openCount = openActions(person.actions).length;
-  const overdueCount = openActions(person.actions).filter((a) => {
-    const age = daysSince(a.createdAt, now);
-    return age > 21;
-  }).length;
+  // Prefer an open raised thread; fall back to top of raise queue
+  const topRaise =
+    raiseQueue(person, now).find((t) => t.raise && t.status === "open") ??
+    raiseQueue(person, now).find((t) => t.raise);
+
+  // Dedupe openActions — compute once, derive counts from it (item 5)
+  const open = openActions(person.actions);
+  const openCount = open.length;
+  const overdueCount = open.filter(
+    (a) => actionAgeTier(daysSince(a.createdAt, now)) === "cold",
+  ).length;
 
   const asyncCount = person.asyncAgenda.length;
 
-  // Last non-zero talk trend for TalkBalance
-  const lastShare = [...person.talkTrend].reverse().find((n) => n > 0) ?? 0;
+  // Last non-zero talk trend for TalkBalance — use findLast (item 8)
+  const lastShare = person.talkTrend.findLast((n) => n > 0) ?? 0;
 
   return (
     <Link
       to={`/person/${person.id}`}
       className="block bg-paper border border-line rounded-lg p-4 hover:border-matcha-deep transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-matcha-deep focus-visible:ring-offset-2"
-      aria-label={`${person.name}, ${person.role} — ${statusLabel}`}
     >
       {/* Header row: avatar + name/role + status */}
       <div className="flex items-start gap-3 mb-3">
@@ -214,7 +229,7 @@ function ReportCard({ person, now }: { person: Person; now: string }) {
 
       {/* Top raise-next thread */}
       {topRaise && (
-        <p className="text-xs text-ink-2 mb-3 truncate" aria-label={`Raise next: ${topRaise.title}`}>
+        <p className="text-xs text-ink-2 mb-3 truncate">
           <span className="text-muted font-mono">Raise: </span>
           {topRaise.title}
         </p>
@@ -245,12 +260,9 @@ function ReportCard({ person, now }: { person: Person; now: string }) {
               color: overdueCount > 0 ? "var(--ooo-cold)" : "var(--neutral)",
             }}
           >
-            {openCount} open {overdueCount > 0 && (
-              <span className="ml-1">
-                ({overdueCount} overdue)
-              </span>
+            {openCount} open loops{overdueCount > 0 && (
+              <span style={{ color: "var(--ooo-cold)" }}> · {overdueCount} overdue</span>
             )}
-            {overdueCount === 0 && "loops"}
           </span>
         )}
       </div>
@@ -276,28 +288,22 @@ export function Overview({ data, now }: OverviewProps) {
     return s === "stale" || s === "cold";
   }).length;
 
-  // Threads flagged to raise (across all people)
-  const raiseCount = people.flatMap((p) => p.threads).filter((t) => t.raise).length;
+  // Threads flagged to raise — open only (parked threads excluded)
+  const raiseCount = people.flatMap((p) => p.threads).filter((t) => t.raise && t.status === "open").length;
 
-  // Top team blind spot
+  // Top team blind spot — computed once, passed to radar strip (item 6)
   const blindSpots = teamBlindSpots(people);
   const topBlindSpot = blindSpots[0];
   const topBlindLabel = topBlindSpot
     ? `${AREA_LABELS[topBlindSpot.area]} · ${Math.round(topBlindSpot.avgDays)}d`
     : "—";
 
-  // Average report airtime (mean of last non-zero talkTrend per person)
+  // Average report airtime (mean of last non-zero talkTrend per person) — use findLast (item 8)
   const shares = people
-    .map((p) => [...p.talkTrend].reverse().find((n) => n > 0) ?? 0)
+    .map((p) => p.talkTrend.findLast((n) => n > 0) ?? 0)
     .filter((n) => n > 0);
   const avgShare = shares.length > 0 ? Math.round(shares.reduce((s, n) => s + n, 0) / shares.length) : 0;
   const avgBalance = balanceHealth(avgShare);
-
-  const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-    { key: "attention", label: "Needs attention" },
-    { key: "overdue", label: "Overdue" },
-    { key: "name", label: "Name" },
-  ];
 
   return (
     <div className="min-h-screen bg-oat">
@@ -307,14 +313,19 @@ export function Overview({ data, now }: OverviewProps) {
         style={{ borderBottomColor: "var(--line)" }}
       >
         <div className="max-w-content mx-auto px-6 h-14 flex items-center justify-between">
-          {/* Wordmark */}
-          <a
-            href="#/"
-            className="font-mono font-bold text-sm text-ink tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-matcha-deep rounded-sm"
-            aria-label="one-on-ones — home"
-          >
-            one-on-<span className="text-matcha-deep">ones</span>
-          </a>
+          {/* Wordmark + subtitle */}
+          <div className="flex items-center gap-2">
+            <a
+              href="#/"
+              className="font-mono font-bold text-sm text-ink tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-matcha-deep rounded-sm"
+              aria-label="one-on-ones — home"
+            >
+              one-on-<span className="text-matcha-deep">ones</span>
+            </a>
+            <span className="font-mono text-xs text-muted hidden sm:inline" aria-hidden="true">
+              · meaningful 1:1s
+            </span>
+          </div>
           {/* Right side nav */}
           <nav aria-label="Site navigation">
             <span className="font-mono text-xs text-muted">
@@ -394,7 +405,7 @@ export function Overview({ data, now }: OverviewProps) {
 
         {/* Coverage radar strip */}
         <section className="mb-8 p-5 bg-paper border border-line rounded-lg">
-          <CoverageRadarStrip people={people} />
+          <CoverageRadarStrip blindSpots={blindSpots} />
         </section>
 
         {/* Report cards grid */}

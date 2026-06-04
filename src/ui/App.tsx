@@ -24,7 +24,12 @@ import { EditReportScreen } from "./EditReportScreen";
 // NOTE: A single "now" string is computed once at module load for deterministic
 // seed-relative calculations in this prototype. Every screen receives it as a
 // prop so domain/compute functions remain pure (no Date.now() inside them).
-const NOW = "2026-06-04";
+// Demo build keeps a frozen date so the seeded sample never drifts; the real
+// (supabase) app uses the actual today so tenure/cadence/staleness are live.
+const NOW =
+  import.meta.env.VITE_BACKEND === "supabase"
+    ? new Date().toISOString().slice(0, 10)
+    : "2026-06-04";
 
 // ---------------------------------------------------------------------------
 // Narrowed state type — guaranteed non-null data (used only past the gate)

@@ -10,7 +10,7 @@ import {
   balanceHealth,
   coverageScore,
 } from "../domain/compute";
-import { daysSince } from "../domain/time";
+import { daysSince, tenureLabel } from "../domain/time";
 import { Avatar } from "./atoms/Avatar";
 import { AreaTag } from "./atoms/AreaTag";
 import { CoverageRadar } from "./atoms/CoverageRadar";
@@ -310,7 +310,7 @@ export function Person({
               </span>
               {/* Tenure chip */}
               <span className="inline-flex items-center font-mono text-xs px-2 py-0.5 rounded-sm bg-oat border border-line text-muted">
-                {person.tenureMonths}mo tenure
+                {tenureLabel(person.joinedDate, now, person.tenureMonths)} tenure
               </span>
               {/* Edit link */}
               <Link to={`/person/${person.id}/edit`}
@@ -330,6 +330,17 @@ export function Person({
             Start 1:1
           </Link>
         </div>
+
+        {/* Profile block */}
+        <section aria-label="Profile" className="bg-paper border border-line rounded-lg p-4 mb-4 font-mono text-sm text-ink">
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-1">
+            {person.seniority ? (<><dt className="text-muted">Seniority</dt><dd>{person.seniority}</dd></>) : null}
+            {person.team ? (<><dt className="text-muted">Team</dt><dd>{person.team}</dd></>) : null}
+            {person.location ? (<><dt className="text-muted">Location</dt><dd>{person.location}</dd></>) : null}
+            {person.timezone ? (<><dt className="text-muted">Timezone</dt><dd>{person.timezone}</dd></>) : null}
+            <dt className="text-muted">On-call</dt><dd>{person.onCall ? "Yes" : "No"}</dd>
+          </dl>
+        </section>
 
         {/* PrepDigest hero */}
         <div className="mb-8">

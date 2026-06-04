@@ -18,6 +18,8 @@
     "@fontsource/space-mono": "^5.2.9",
     "@sentry/react": "^10.56.0",
     "@supabase/supabase-js": "2.107.0",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.30.4"

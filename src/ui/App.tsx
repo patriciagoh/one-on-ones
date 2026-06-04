@@ -22,6 +22,10 @@ import { NewReportScreen } from "./NewReportScreen";
 import { EditReportScreen } from "./EditReportScreen";
 
 import { ErrorBoundary } from "./ErrorBoundary";
+import { SpeedInsights } from "@vercel/speed-insights/react";
+import { Analytics } from "@vercel/analytics/react";
+
+const insightsOn = import.meta.env.VITE_VERCEL_INSIGHTS === "1";
 
 // NOTE: A single "now" string is computed once at module load for deterministic
 // seed-relative calculations in this prototype. Every screen receives it as a
@@ -110,6 +114,8 @@ export function App() {
   return (
     <ErrorBoundary>
       {!authPort ? <AuthedApp /> : <SupabaseAuthGate />}
+      {insightsOn && <SpeedInsights />}
+      {insightsOn && <Analytics />}
     </ErrorBoundary>
   );
 }

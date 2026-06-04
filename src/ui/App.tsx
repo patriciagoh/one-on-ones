@@ -14,15 +14,10 @@ import { Person } from "./Person";
 import { MeetingMode } from "./MeetingMode";
 import { Summary } from "./Summary";
 import type { AreaKey, Mood, AppData } from "../domain/types";
-import { localAppStore } from "../storage/appStore";
-import { supabaseAppStore } from "../storage/supabaseAppStore";
-import { createStore } from "../storage/store";
-import { createSupabaseClient, supabaseRowStore } from "../storage/supabaseClient";
-
-const appStore =
-  import.meta.env.VITE_BACKEND === "supabase"
-    ? supabaseAppStore(supabaseRowStore(createSupabaseClient()))
-    : localAppStore(createStore());
+import { appStore, authPort } from "../storage/backend";
+import { useAuth } from "../state/useAuth";
+import { LoginScreen } from "./LoginScreen";
+import { AuthContext } from "./authContext";
 
 // NOTE: A single "now" string is computed once at module load for deterministic
 // seed-relative calculations in this prototype. Every screen receives it as a
@@ -103,6 +98,23 @@ function SummaryRoute({
 // ---------------------------------------------------------------------------
 
 export function App() {
+  // Demo/local build: no auth, render the app directly (unchanged behavior).
+  if (!authPort) return <AuthedApp />;
+  return <SupabaseAuthGate />;
+}
+
+function SupabaseAuthGate() {
+  const auth = useAuth(authPort!);
+  if (auth.status === "checking") return <AuthCheckingGate />;
+  if (auth.status === "anon") return <LoginScreen onSubmit={auth.signIn} />;
+  return (
+    <AuthContext.Provider value={{ signOut: () => { void auth.signOut(); } }}>
+      <AuthedApp />
+    </AuthContext.Provider>
+  );
+}
+
+function AuthedApp() {
   const app = useAppState(appStore);
 
   if (app.status === "loading") return <LoadingGate />;
@@ -152,6 +164,14 @@ export function App() {
 // ---------------------------------------------------------------------------
 // Loading / error gates
 // ---------------------------------------------------------------------------
+
+function AuthCheckingGate() {
+  return (
+    <main className="min-h-screen grid place-items-center bg-paper text-ink font-sans">
+      <p role="status" aria-live="polite">Checking your session…</p>
+    </main>
+  );
+}
 
 function LoadingGate() {
   return (

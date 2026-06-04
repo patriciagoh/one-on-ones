@@ -1,6 +1,32 @@
 import { describe, it, expect } from "vitest";
 import { reducers } from "./useAppState";
 import { seedData } from "../storage/seed";
+import type { ReportFields } from "../domain/types";
+
+const FIELDS: ReportFields = {
+  name: "Maya Chen", pronouns: "she/her", cadenceDays: 14,
+  seniority: "Senior", team: "Platform", location: "Toronto",
+  timezone: "America/Toronto", onCall: true, joinedDate: "2025-02-04",
+};
+
+describe("addPerson", () => {
+  it("appends a person with derived id/initials and empty history", () => {
+    const data = seedData();
+    const before = data.people.length;
+    const next = reducers.addPerson(data, FIELDS, "p-test-1");
+    const p = next.people.find((x) => x.id === "p-test-1")!;
+    expect(next.people.length).toBe(before + 1);
+    expect(p.name).toBe("Maya Chen");
+    expect(p.initials).toBe("MC");
+    expect(p.cadenceDays).toBe(14);
+    expect(p.seniority).toBe("Senior");
+    expect(p.onCall).toBe(true);
+    expect(p.joinedDate).toBe("2025-02-04");
+    expect(p.meetings).toEqual([]);
+    expect(p.actions).toEqual([]);
+    expect(p.lastOneOnOne).toBeNull();
+  });
+});
 
 describe("reducers", () => {
   // -----------------------------------------------------------------------

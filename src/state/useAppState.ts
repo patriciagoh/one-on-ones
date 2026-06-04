@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { ActionItem, ActionOwner, AppData, AsyncItem, MeetingRecord, Person } from "../domain/types";
+import type { ActionItem, ActionOwner, AppData, AsyncItem, MeetingRecord, Person, ReportFields } from "../domain/types";
+import { AREA_KEYS } from "../domain/types";
+import { initialsOf, hueOf } from "../domain/person";
 import type { AppStore } from "../storage/appStore";
 
 type NewAsync = Pick<AsyncItem, "text" | "area" | "mood">;
@@ -120,6 +122,36 @@ export const reducers = {
       };
     });
   },
+
+  addPerson(data: AppData, input: ReportFields, id: string): AppData {
+    const coverage = Object.fromEntries(AREA_KEYS.map((k) => [k, 0])) as Person["coverage"];
+    const person: Person = {
+      id,
+      name: input.name,
+      role: input.seniority,
+      pronouns: input.pronouns,
+      initials: initialsOf(input.name),
+      hue: hueOf(input.name),
+      tenureMonths: 0,
+      cadenceDays: input.cadenceDays,
+      lastOneOnOne: null,
+      nextScheduled: null,
+      talkTrend: [],
+      sentimentTrend: [],
+      coverage,
+      threads: [],
+      actions: [],
+      asyncAgenda: [],
+      meetings: [],
+      seniority: input.seniority,
+      team: input.team,
+      location: input.location,
+      timezone: input.timezone,
+      onCall: input.onCall,
+      joinedDate: input.joinedDate,
+    };
+    return { ...data, people: [...data.people, person] };
+  },
 };
 
 export type LoadStatus = "loading" | "ready" | "error";
@@ -169,6 +201,12 @@ export function useAppState(store: AppStore) {
         data && apply(reducers.addAsyncItem(data, pid, item, now, id)),
       saveMeeting: (input: SaveMeetingInput) =>
         data && apply(reducers.saveMeeting(data, input)),
+      addPerson: (input: ReportFields): string | undefined => {
+        if (!data) return undefined;
+        const id = `p-${crypto.randomUUID().slice(0, 8)}`;
+        apply(reducers.addPerson(data, input, id));
+        return id;
+      },
     }),
     [data, status, saveError, apply],
   );

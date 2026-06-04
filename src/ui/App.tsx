@@ -130,50 +130,57 @@ function AuthedApp() {
   const state = app as ReadyState;
 
   return (
-    <HashRouter>
-      {/* Skip link — visible on focus, targets the #main landmark in each screen. */}
-      <a className="skip-link" href="#main">
-        Skip to content
-      </a>
+    <>
+      {state.saveError && (
+        <div role="alert" className="bg-bad text-paper text-sm text-center px-4 py-2 font-sans">
+          Couldn't save your last change — check your connection and try again.
+        </div>
+      )}
+      <HashRouter>
+        {/* Skip link — visible on focus, targets the #main landmark in each screen. */}
+        <a className="skip-link" href="#main">
+          Skip to content
+        </a>
 
-      <Routes>
-        {/* Overview — list of all reports */}
-        <Route
-          path="/"
-          element={<Overview data={state.data} now={NOW} />}
-        />
+        <Routes>
+          {/* Overview — list of all reports */}
+          <Route
+            path="/"
+            element={<Overview data={state.data} now={NOW} />}
+          />
 
-        {/* Person — deep-dive on one report */}
-        <Route
-          path="/person/:id"
-          element={<PersonRoute state={state} />}
-        />
+          {/* Person — deep-dive on one report */}
+          <Route
+            path="/person/:id"
+            element={<PersonRoute state={state} />}
+          />
 
-        {/* MeetingMode — live 1:1 session */}
-        <Route
-          path="/person/:id/meeting"
-          element={<MeetingRoute state={state} />}
-        />
+          {/* MeetingMode — live 1:1 session */}
+          <Route
+            path="/person/:id/meeting"
+            element={<MeetingRoute state={state} />}
+          />
 
-        {/* Summary — post-meeting recap */}
-        <Route
-          path="/person/:id/summary"
-          element={<SummaryRoute state={state} />}
-        />
+          {/* Summary — post-meeting recap */}
+          <Route
+            path="/person/:id/summary"
+            element={<SummaryRoute state={state} />}
+          />
 
-        {/* Edit report */}
-        <Route
-          path="/person/:id/edit"
-          element={<EditReportScreen data={state.data} onUpdate={state.updatePerson} onRemove={state.removePerson} />}
-        />
+          {/* Edit report */}
+          <Route
+            path="/person/:id/edit"
+            element={<EditReportScreen data={state.data} onUpdate={state.updatePerson} onRemove={state.removePerson} />}
+          />
 
-        {/* New report */}
-        <Route path="/new" element={<NewReportScreen onAdd={state.addPerson} />} />
+          {/* New report */}
+          <Route path="/new" element={<NewReportScreen onAdd={state.addPerson} />} />
 
-        {/* Catch-all — redirect to root */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </HashRouter>
+          {/* Catch-all — redirect to root */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </HashRouter>
+    </>
   );
 }
 

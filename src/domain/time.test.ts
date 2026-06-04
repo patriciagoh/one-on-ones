@@ -29,5 +29,7 @@ describe("tenure", () => {
     expect(tenureLabel("2025-02-04", "2026-06-04")).toBe("1y 3m");
     expect(tenureLabel("2026-05-20", "2026-06-04")).toBe("<1m");
     expect(tenureLabel(null, "2026-06-04", 5)).toBe("5m");
+    expect(tenureLabel(null, "2026-06-04")).toBe("—");   // no join date, no fallback
+    expect(tenureLabel(null, "2026-06-04", 0)).toBe("—");
   });
 });

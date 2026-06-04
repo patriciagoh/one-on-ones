@@ -39,7 +39,7 @@ export async function initObservability(): Promise<void> {
     integrations: [],
     tracesSampleRate: 0,
     beforeSend: (event) =>
-      scrubEvent(event as unknown as ScrubbableEvent) as Parameters<
+      scrubEvent(event as unknown as ScrubbableEvent) as unknown as Parameters<
         NonNullable<Parameters<typeof Sentry.init>[0]["beforeSend"]>
       >[0],
     beforeBreadcrumb: (crumb) => {

@@ -406,6 +406,7 @@ Create `src/storage/supabaseAppStore.ts`:
 import type { AppData } from "../domain/types";
 import { normalizeAppData } from "../domain/normalize";
 import { emptyData } from "./seed";
+import { SCHEMA_VERSION } from "./store";
 import type { AppStore } from "./appStore";
 
 /**
@@ -422,21 +423,31 @@ export interface RowStore {
 
 function isAppData(v: unknown): v is AppData {
   const d = v as Partial<AppData> | null;
-  return !!d && d.version === 2 && Array.isArray(d.people) && Array.isArray(d.templates);
+  return !!d && d.version === SCHEMA_VERSION && Array.isArray(d.people) && Array.isArray(d.templates);
 }
 
-/** AppStore backed by Supabase. New accounts bootstrap to empty-but-ready. */
+/** AppStore backed by Supabase. New accounts bootstrap to empty-but-ready;
+ *  a non-null but unrecognized row throws (never silently overwritten). */
 export function supabaseAppStore(rows: RowStore): AppStore {
   return {
     load: async () => {
       const raw = await rows.read();
-      return normalizeAppData(isAppData(raw) ? raw : emptyData());
+      if (raw === null) return normalizeAppData(emptyData());
+      if (!isAppData(raw)) {
+        // Refuse to load (and thus to let the next save overwrite) an
+        // unrecognized row — surface as a load error so the original is
+        // preserved for inspection, never silently destroyed.
+        throw new Error("Stored data is in an unrecognized format");
+      }
+      return normalizeAppData(raw);
     },
     save: async (data) => { await rows.write(data); },
     reset: async () => { await rows.remove(); },
   };
 }
 ```
+
+(Tests include the corrupt-row case: a non-null unrecognized row makes `load()` reject and leaves the row untouched.)
 
 - [ ] **Step 4: Run the test to verify it passes**
 

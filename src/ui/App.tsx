@@ -19,6 +19,7 @@ import { useAuth } from "../state/useAuth";
 import { LoginScreen } from "./LoginScreen";
 import { AuthContext } from "./authContext";
 import { NewReportScreen } from "./NewReportScreen";
+import { EditReportScreen } from "./EditReportScreen";
 
 // NOTE: A single "now" string is computed once at module load for deterministic
 // seed-relative calculations in this prototype. Every screen receives it as a
@@ -153,6 +154,12 @@ function AuthedApp() {
         <Route
           path="/person/:id/summary"
           element={<SummaryRoute state={state} />}
+        />
+
+        {/* Edit report */}
+        <Route
+          path="/person/:id/edit"
+          element={<EditReportScreen data={state.data} onUpdate={state.updatePerson} onRemove={state.removePerson} />}
         />
 
         {/* New report */}

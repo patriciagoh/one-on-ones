@@ -312,6 +312,11 @@ export function Person({
               <span className="inline-flex items-center font-mono text-xs px-2 py-0.5 rounded-sm bg-oat border border-line text-muted">
                 {person.tenureMonths}mo tenure
               </span>
+              {/* Edit link */}
+              <Link to={`/person/${person.id}/edit`}
+                className="font-mono text-xs text-matcha-deep hover:text-matcha transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-matcha-deep rounded-sm px-1">
+                Edit
+              </Link>
             </div>
           </div>
 

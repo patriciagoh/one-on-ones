@@ -77,6 +77,13 @@ blobs).
 - **`personId` flows into route strings** — safe today (ids are app-generated, React
   Router ignores `javascript:`). **→ Phase 2**: validate id charset if ids ever become
   user-editable.
+- **PrepDigest focus-ring `ring-offset-2` uses the default white offset color on the
+  dark `--term-bg` panel** — `src/ui/PrepDigest.tsx:123` (introduced by the Phase 1 a11y
+  fix). The ring is clearly visible (passes WCAG 2.4.7), but the white offset gap + white
+  ring read as a thick white halo. **→ Phase 3 (UX pass)**: set the offset color to the
+  panel bg. Cosmetic only; consistent with how the rest of the codebase uses `ring-offset-2`.
+- **No dedicated `PrepDigest.axe.test.tsx`** — covered indirectly via `Person.axe.test.tsx`.
+  Add a direct axe test when PrepDigest gains more interactive elements. Minor.
 
 ## Security finding (detail)
 
@@ -84,8 +91,9 @@ blobs).
   (imported via `src/index.css:2`), survives into `dist`. Every page load hits
   `fonts.googleapis.com`/`fonts.gstatic.com`, leaking the user's IP, geolocation, and a
   session-timing signal to Google. Medium severity given the sensitive notes the app
-  handles. The README "no network" claim corrected now (must-fix above); **self-hosting
-  the fonts is a Phase 2 pre-launch item** (the design system already exposes the token
+  handles. The README claim corrected now (must-fix above); **self-hosting the fonts must
+  land in Phase 2 *before the first real-data load*** (the risk materializes the moment a
+  real user's browser makes the request — not merely "pre-launch") (the design system already exposes the token
   layer cleanly, and `fonts.css` documents the `@font-face` swap — but it touches the
   shared design-system integration, so it belongs with the Phase 2 build work, not a
   Phase 1 hotfix).

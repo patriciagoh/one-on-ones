@@ -203,4 +203,19 @@ describe("reducers", () => {
     expect(data.people[0].coverage.growth).toBe(originalCoverageGrowth);
     expect(data.people[0].actions.length).toBe(originalActionsLength);
   });
+
+  it("saveMeeting generates unique action IDs across same-day meetings", () => {
+    const data = seedData();
+    const personId = "p-sofia";
+    const input = {
+      personId, date: "2026-06-10", durationMin: 30, reportShare: 50,
+      areas: ["growth" as const], summary: "s",
+      newActions: [{ text: "one", owner: "manager" as const }],
+    };
+    const once = reducers.saveMeeting(data, input);
+    const twice = reducers.saveMeeting(once, input);
+    const person = twice.people.find((p) => p.id === personId)!;
+    const ids = person.actions.map((a) => a.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
 });

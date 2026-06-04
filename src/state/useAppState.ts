@@ -94,7 +94,7 @@ export const reducers = {
       for (const area of input.areas) coverage[area] = 0;
 
       const mapped: ActionItem[] = input.newActions.map((a, i) => ({
-        id: `act-${input.personId}-${input.date}-${i}`,
+        id: `act-${input.personId}-${input.date}-${i}-${crypto.randomUUID().slice(0, 8)}`,
         text: a.text,
         owner: a.owner,
         status: "open" as const,

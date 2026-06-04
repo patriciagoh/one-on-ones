@@ -120,7 +120,7 @@ export function PrepDigest({ digest, person, now, onStart, startLabel }: PrepDig
         <button
           type="button"
           onClick={onStart}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-md font-sans font-semibold text-sm bg-matcha-deep text-paper transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-md font-sans font-semibold text-sm bg-matcha-deep text-paper transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper focus-visible:ring-offset-2"
           aria-label={startLabel ?? `Start 1:1 with ${person.name} from prep digest`}
         >
           Start 1:1

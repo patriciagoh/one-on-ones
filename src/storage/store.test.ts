@@ -55,4 +55,30 @@ describe("store", () => {
     const stored = JSON.parse(port.get()!);
     expect(stored.version).toBe(2);
   });
+
+  it("backs up an unrecognized blob before reseeding over it", () => {
+    let backedUp: string | null = null;
+    const original = JSON.stringify({ version: 99, secret: "real notes" });
+    const port: StoragePort = {
+      get: () => original,
+      // flush behavior for this path is covered by the "migrated or reseeded blob is flushed" test
+      set: () => {},
+      remove: () => {},
+      backup: (v) => { backedUp = v; },
+    };
+    createStore(port).load();
+    expect(backedUp).toBe(original);
+  });
+
+  it("does not back up when storage is empty (nothing to lose)", () => {
+    let backupCalls = 0;
+    const port: StoragePort = {
+      get: () => null,
+      set: () => {},
+      remove: () => {},
+      backup: () => { backupCalls += 1; },
+    };
+    createStore(port).load();
+    expect(backupCalls).toBe(0);
+  });
 });

@@ -3,8 +3,9 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 export default defineConfig({
-  // GitHub Pages subpath; HashRouter handles in-app routing. vite preview serves under this base.
-  base: "/one-on-ones/",
+  // Configurable for different hosts: GitHub Pages serves /one-on-ones/ (default),
+  // a root-domain host (Vercel) sets VITE_BASE=/, self-hosters set their own path.
+  base: process.env.VITE_BASE || "/one-on-ones/",
   plugins: [react()],
   test: {
     globals: true,

@@ -4,10 +4,8 @@ A local-first manager's tool for running meaningful 1:1s. No backend, no
 telemetry, no accounts — everything lives in your browser's localStorage and
 is seeded with realistic sample data the moment you open it.
 
-**Privacy note:** There is no analytics or telemetry, but the current build
-loads web fonts from Google Fonts, which makes a network request to a
-third-party server (leaking your IP to Google). Self-hosting the fonts is
-planned; until then the app is not fully self-contained.
+**Privacy note:** There is no analytics, telemetry, or third-party network
+requests. Fonts are self-hosted — the app is fully self-contained.
 
 Live demo: https://patriciagoh.github.io/one-on-ones/
 
@@ -86,6 +84,44 @@ src/ui/         four screens + atoms (Avatar, CoverageRadar, TalkBalance, etc.)
 
 Routes use a HashRouter so GitHub Pages needs no server-side rewrite:
 `/`, `/person/:id`, `/person/:id/meeting`, `/person/:id/summary`.
+
+## Run your own
+
+This is two builds from one codebase, chosen by `VITE_BACKEND`:
+
+- **`local`** (the public demo) — seeded sample data, no login, everything in your browser's
+  `localStorage`. This is what's deployed to GitHub Pages.
+- **`supabase`** (the real app) — your data lives in your own Supabase project, behind an
+  email + password login. This is what you self-host.
+
+### Host the real app (Supabase, free tier)
+
+1. **Clone** this repo (or use it as a template).
+2. **Create a free [Supabase](https://supabase.com) project.** In the SQL Editor, run the
+   contents of [`supabase/schema.sql`](./supabase/schema.sql) — it creates the `app_data` table
+   and the row-level-security rules so each user can only ever see their own data.
+3. **Add your user:** Authentication → Users → Add user (email + password, mark confirmed).
+   There is no in-app sign-up by design — this is a private, single-user tool.
+4. **Get your keys:** Project Settings → API → your **Project URL** and **publishable key**
+   (the `sb_publishable_…` one — safe to ship; never use the secret key).
+5. **Set environment variables** (in your host, or a local `.env` — see [`.env.example`](./.env.example)):
+   ```
+   VITE_BACKEND=supabase
+   VITE_SUPABASE_URL=https://your-project.supabase.co
+   VITE_SUPABASE_ANON_KEY=sb_publishable_xxx
+   VITE_BASE=/
+   ```
+6. **Deploy** (one click below, or `npm run build` and serve `dist/` on any static host):
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fpatriciagoh%2Fone-on-ones&env=VITE_BACKEND,VITE_SUPABASE_URL,VITE_SUPABASE_ANON_KEY,VITE_BASE&envDescription=Build%20mode%20%2B%20your%20Supabase%20connection)
+
+7. Open your deployed URL and **log in** with the user from step 3.
+
+### Fully self-hosted Supabase
+
+Prefer not to use Supabase's cloud? Supabase is open source — run it yourself with Docker
+(see the [Supabase self-hosting docs](https://supabase.com/docs/guides/self-hosting/docker)),
+then point `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` at your instance. Everything else is identical.
 
 ## License
 

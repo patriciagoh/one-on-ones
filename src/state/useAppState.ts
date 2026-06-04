@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ActionItem, ActionOwner, AppData, AsyncItem, MeetingRecord, Person, ReportFields } from "../domain/types";
+import { captureError } from "../observability/sentry";
 import { AREA_KEYS } from "../domain/types";
 import { initialsOf, hueOf } from "../domain/person";
 import type { AppStore } from "../storage/appStore";
@@ -203,7 +204,7 @@ export function useAppState(store: AppStore) {
     store
       .load()
       .then((d) => { if (alive) { setData(d); setStatus("ready"); } })
-      .catch(() => { if (alive) setStatus("error"); });
+      .catch((err) => { if (alive) setStatus("error"); captureError(err, { op: "load" }); });
     return () => { alive = false; };
   }, [store]);
 
@@ -211,7 +212,7 @@ export function useAppState(store: AppStore) {
     (next: AppData) => {
       setData(next); // optimistic
       setSaveError(false);
-      store.save(next).catch(() => setSaveError(true));
+      store.save(next).catch((err) => { setSaveError(true); captureError(err, { op: "save" }); });
     },
     [store],
   );

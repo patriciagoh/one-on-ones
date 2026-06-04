@@ -37,6 +37,17 @@ describe("ReportForm", () => {
     expect(screen.getByLabelText(/team/i)).toHaveValue("Infra");
   });
 
+  it("derives timezone from the selected location", async () => {
+    const onSubmit = vi.fn();
+    render(<ReportForm mode="add" onSubmit={onSubmit} />);
+    await userEvent.type(screen.getByLabelText(/name/i), "X");
+    await userEvent.selectOptions(screen.getByLabelText(/location/i), "Ontario");
+    await userEvent.click(screen.getByRole("button", { name: /add report/i }));
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ location: "Ontario", timezone: "America/Toronto" }),
+    );
+  });
+
   it("has no axe violations", async () => {
     const { container } = render(<ReportForm mode="add" onSubmit={vi.fn()} />);
     expect(await axe(container)).toHaveNoViolations();

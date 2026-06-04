@@ -343,6 +343,7 @@ export function Person({
             {person.location ? (<><dt className="text-muted">Location</dt><dd>{person.location}</dd></>) : null}
             {person.timezone ? (<><dt className="text-muted">Timezone</dt><dd>{person.timezone}</dd></>) : null}
             <dt className="text-muted">On-call</dt><dd>{person.onCall ? "Yes" : "No"}</dd>
+            <dt className="text-muted">ID</dt><dd>{person.id}</dd>
           </dl>
         </section>
 

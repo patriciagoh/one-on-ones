@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createStore, type StoragePort } from "./store";
+import { seedData } from "./seed";
 
 function memoryPort(initial?: string): StoragePort {
   let v = initial ?? null;
@@ -74,6 +75,19 @@ describe("store", () => {
     let backupCalls = 0;
     const port: StoragePort = {
       get: () => null,
+      set: () => {},
+      remove: () => {},
+      backup: () => { backupCalls += 1; },
+    };
+    createStore(port).load();
+    expect(backupCalls).toBe(0);
+  });
+
+  it("does not back up a valid v2 blob on normal load", () => {
+    let backupCalls = 0;
+    const validBlob = JSON.stringify(seedData());
+    const port: StoragePort = {
+      get: () => validBlob,
       set: () => {},
       remove: () => {},
       backup: () => { backupCalls += 1; },

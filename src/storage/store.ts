@@ -1,5 +1,6 @@
 import type { AppData } from "../domain/types";
 import { seedData } from "./seed";
+import { normalizeAppData } from "../domain/normalize";
 
 const KEY = "one-on-ones/v2";
 const BACKUP_KEY = "one-on-ones/backup";
@@ -45,8 +46,9 @@ export function createStore(port: StoragePort = browserPort()): Store {
     load() {
       const raw = port.get();
       const parsed = raw ? safeParse(raw) : null;
-      const data = migrate(parsed);
-      const reseeded = parsed !== data; // migrate returned fresh seed (unrecognized or unparseable blob)
+      const migrated = migrate(parsed);
+      const data = normalizeAppData(migrated);
+      const reseeded = parsed !== migrated; // migrate returned fresh seed (unrecognized or unparseable blob)
       if (raw && reseeded) port.backup?.(raw); // raw was non-null but unrecognized — preserve it before overwriting
       if (!raw || reseeded) port.set(JSON.stringify(data));
       return data;

@@ -245,3 +245,31 @@ describe("reducers", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 });
+
+describe("updatePerson", () => {
+  it("patches profile fields, recomputes initials, keeps hue + history", () => {
+    const base = reducers.addPerson(seedData(), FIELDS, "p-u");
+    const original = base.people.find((p) => p.id === "p-u")!;
+    const edited = reducers.updatePerson(base, "p-u", { ...FIELDS, name: "Dana Ng", team: "Infra" });
+    const p = edited.people.find((x) => x.id === "p-u")!;
+    expect(p.name).toBe("Dana Ng");
+    expect(p.initials).toBe("DN");
+    expect(p.team).toBe("Infra");
+    expect(p.hue).toBe(original.hue);
+    expect(p.meetings).toBe(original.meetings);
+  });
+  it("is a no-op for an unknown id", () => {
+    const data = seedData();
+    expect(reducers.updatePerson(data, "nope", FIELDS)).toEqual(data);
+  });
+});
+
+describe("removePerson", () => {
+  it("removes the target and leaves the rest", () => {
+    const data = seedData();
+    const id = data.people[0].id;
+    const next = reducers.removePerson(data, id);
+    expect(next.people.find((p) => p.id === id)).toBeUndefined();
+    expect(next.people.length).toBe(data.people.length - 1);
+  });
+});

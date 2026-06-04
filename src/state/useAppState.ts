@@ -123,6 +123,34 @@ export const reducers = {
     });
   },
 
+  updatePerson(data: AppData, id: string, input: ReportFields): AppData {
+    return {
+      ...data,
+      people: data.people.map((p) =>
+        p.id === id
+          ? {
+              ...p,
+              name: input.name,
+              role: input.seniority,
+              pronouns: input.pronouns,
+              initials: initialsOf(input.name),
+              cadenceDays: input.cadenceDays,
+              seniority: input.seniority,
+              team: input.team,
+              location: input.location,
+              timezone: input.timezone,
+              onCall: input.onCall,
+              joinedDate: input.joinedDate,
+            }
+          : p,
+      ),
+    };
+  },
+
+  removePerson(data: AppData, id: string): AppData {
+    return { ...data, people: data.people.filter((p) => p.id !== id) };
+  },
+
   addPerson(data: AppData, input: ReportFields, id: string): AppData {
     const coverage = Object.fromEntries(AREA_KEYS.map((k) => [k, 0])) as Person["coverage"];
     const person: Person = {
@@ -207,6 +235,10 @@ export function useAppState(store: AppStore) {
         apply(reducers.addPerson(data, input, id));
         return id;
       },
+      updatePerson: (id: string, input: ReportFields) =>
+        data && apply(reducers.updatePerson(data, id, input)),
+      removePerson: (id: string) =>
+        data && apply(reducers.removePerson(data, id)),
     }),
     [data, status, saveError, apply],
   );

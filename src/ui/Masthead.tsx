@@ -1,8 +1,9 @@
 // Masthead — shared sticky top bar used by Overview, Person, Summary, and MeetingMode.
 // MeetingMode uses it for the wordmark only; its Discard/End&save controls stay
 // inside the meeting header card (per the design).
-import React from "react";
+import React, { useContext } from "react";
 import { Link } from "react-router-dom";
+import { AuthContext } from "./authContext";
 
 interface MastheadProps {
   /**
@@ -18,6 +19,7 @@ interface MastheadProps {
  * All screens share this component so the wordmark is never duplicated inline.
  */
 export function Masthead({ rightSlot }: MastheadProps) {
+  const auth = useContext(AuthContext);
   return (
     <header
       className="sticky top-0 z-10 bg-oat border-b border-line"
@@ -39,12 +41,19 @@ export function Masthead({ rightSlot }: MastheadProps) {
           </span>
         </div>
 
-        {/* Right side: passed-in slot (counts, links, etc.) */}
-        {rightSlot && (
-          <div>
-            {rightSlot}
-          </div>
-        )}
+        {/* Right side: passed-in slot + optional logout (supabase build only) */}
+        <div className="flex items-center gap-3">
+          {rightSlot}
+          {auth && (
+            <button
+              type="button"
+              onClick={auth.signOut}
+              className="font-mono text-xs text-matcha-deep hover:text-matcha transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-matcha-deep rounded-sm px-1"
+            >
+              Log out
+            </button>
+          )}
+        </div>
       </div>
     </header>
   );

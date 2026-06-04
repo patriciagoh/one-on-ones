@@ -1,6 +1,32 @@
 import { describe, it, expect } from "vitest";
 import { reducers } from "./useAppState";
 import { seedData } from "../storage/seed";
+import type { ReportFields } from "../domain/types";
+
+const FIELDS: ReportFields = {
+  name: "Maya Chen", pronouns: "she/her", cadenceDays: 14,
+  seniority: "Senior", team: "Platform", location: "Toronto",
+  timezone: "America/Toronto", onCall: true, joinedDate: "2025-02-04",
+};
+
+describe("addPerson", () => {
+  it("appends a person with derived id/initials and empty history", () => {
+    const data = seedData();
+    const before = data.people.length;
+    const next = reducers.addPerson(data, FIELDS, "p-test-1");
+    const p = next.people.find((x) => x.id === "p-test-1")!;
+    expect(next.people.length).toBe(before + 1);
+    expect(p.name).toBe("Maya Chen");
+    expect(p.initials).toBe("MC");
+    expect(p.cadenceDays).toBe(14);
+    expect(p.seniority).toBe("Senior");
+    expect(p.onCall).toBe(true);
+    expect(p.joinedDate).toBe("2025-02-04");
+    expect(p.meetings).toEqual([]);
+    expect(p.actions).toEqual([]);
+    expect(p.lastOneOnOne).toBeNull();
+  });
+});
 
 describe("reducers", () => {
   // -----------------------------------------------------------------------
@@ -217,5 +243,33 @@ describe("reducers", () => {
     const person = twice.people.find((p) => p.id === personId)!;
     const ids = person.actions.map((a) => a.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+describe("updatePerson", () => {
+  it("patches profile fields, recomputes initials, keeps hue + history", () => {
+    const base = reducers.addPerson(seedData(), FIELDS, "p-u");
+    const original = base.people.find((p) => p.id === "p-u")!;
+    const edited = reducers.updatePerson(base, "p-u", { ...FIELDS, name: "Dana Ng", team: "Infra" });
+    const p = edited.people.find((x) => x.id === "p-u")!;
+    expect(p.name).toBe("Dana Ng");
+    expect(p.initials).toBe("DN");
+    expect(p.team).toBe("Infra");
+    expect(p.hue).toBe(original.hue);
+    expect(p.meetings).toBe(original.meetings);
+  });
+  it("is a no-op for an unknown id", () => {
+    const data = seedData();
+    expect(reducers.updatePerson(data, "nope", FIELDS)).toEqual(data);
+  });
+});
+
+describe("removePerson", () => {
+  it("removes the target and leaves the rest", () => {
+    const data = seedData();
+    const id = data.people[0].id;
+    const next = reducers.removePerson(data, id);
+    expect(next.people.find((p) => p.id === id)).toBeUndefined();
+    expect(next.people.length).toBe(data.people.length - 1);
   });
 });

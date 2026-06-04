@@ -10,7 +10,7 @@ import {
   balanceHealth,
   coverageScore,
 } from "../domain/compute";
-import { daysSince } from "../domain/time";
+import { daysSince, tenureLabel } from "../domain/time";
 import { Avatar } from "./atoms/Avatar";
 import { AreaTag } from "./atoms/AreaTag";
 import { CoverageRadar } from "./atoms/CoverageRadar";
@@ -304,27 +304,48 @@ export function Person({
               {person.pronouns ? <span> · {person.pronouns}</span> : null}
             </p>
             <div className="mt-2 flex items-center gap-2 flex-wrap">
-              {/* "in team" chip */}
-              <span className="inline-flex items-center font-mono text-xs px-2 py-0.5 rounded-sm bg-matcha-tint text-matcha-deep">
-                in team
-              </span>
+              {/* "in team" chip — only shown when team is set */}
+              {person.team && (
+                <span className="inline-flex items-center font-mono text-xs px-2 py-0.5 rounded-sm bg-matcha-tint text-matcha-deep">
+                  in {person.team}
+                </span>
+              )}
               {/* Tenure chip */}
               <span className="inline-flex items-center font-mono text-xs px-2 py-0.5 rounded-sm bg-oat border border-line text-muted">
-                {person.tenureMonths}mo tenure
+                {tenureLabel(person.joinedDate, now, person.tenureMonths)} tenure
               </span>
             </div>
           </div>
 
-          {/* Primary CTA — "Start 1:1" */}
-          <Link
-            to={`/person/${personId}/meeting`}
-            className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-md font-sans font-semibold text-sm bg-matcha-deep text-paper transition-colors hover:bg-matcha focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-matcha-deep focus-visible:ring-offset-2"
-            aria-label={`Start 1:1 with ${person.name}`}
-            style={{ minHeight: 40 }}
-          >
-            Start 1:1
-          </Link>
+          {/* CTAs — Edit (secondary) + Start 1:1 (primary) */}
+          <div className="flex items-center gap-2 shrink-0">
+            <Link to={`/person/${person.id}/edit`}
+              className="shrink-0 inline-flex items-center px-4 py-2 rounded-md font-sans font-semibold text-sm border border-line text-ink hover:border-matcha-deep transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-matcha-deep focus-visible:ring-offset-2"
+              style={{ minHeight: 40 }}>
+              Edit
+            </Link>
+            <Link
+              to={`/person/${personId}/meeting`}
+              className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-md font-sans font-semibold text-sm bg-matcha-deep text-paper transition-colors hover:bg-matcha focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-matcha-deep focus-visible:ring-offset-2"
+              aria-label={`Start 1:1 with ${person.name}`}
+              style={{ minHeight: 40 }}
+            >
+              Start 1:1
+            </Link>
+          </div>
         </div>
+
+        {/* Profile block */}
+        <section aria-label="Profile" className="bg-paper border border-line rounded-lg p-4 mb-4 font-mono text-sm text-ink">
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-1">
+            {person.seniority ? (<><dt className="text-muted">Seniority</dt><dd>{person.seniority}</dd></>) : null}
+            {person.team ? (<><dt className="text-muted">Team</dt><dd>{person.team}</dd></>) : null}
+            {person.location ? (<><dt className="text-muted">Location</dt><dd>{person.location}</dd></>) : null}
+            {person.timezone ? (<><dt className="text-muted">Timezone</dt><dd>{person.timezone}</dd></>) : null}
+            <dt className="text-muted">On-call</dt><dd>{person.onCall ? "Yes" : "No"}</dd>
+            <dt className="text-muted">ID</dt><dd>{person.id}</dd>
+          </dl>
+        </section>
 
         {/* PrepDigest hero */}
         <div className="mb-8">

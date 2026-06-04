@@ -1,6 +1,8 @@
-import { useCallback, useMemo, useState } from "react";
-import type { ActionItem, ActionOwner, AppData, AsyncItem, MeetingRecord, Person } from "../domain/types";
-import { createStore, type Store } from "../storage/store";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ActionItem, ActionOwner, AppData, AsyncItem, MeetingRecord, Person, ReportFields } from "../domain/types";
+import { AREA_KEYS } from "../domain/types";
+import { initialsOf, hueOf } from "../domain/person";
+import type { AppStore } from "../storage/appStore";
 
 type NewAsync = Pick<AsyncItem, "text" | "area" | "mood">;
 
@@ -120,25 +122,96 @@ export const reducers = {
       };
     });
   },
+
+  updatePerson(data: AppData, id: string, input: ReportFields): AppData {
+    return {
+      ...data,
+      people: data.people.map((p) =>
+        p.id === id
+          ? {
+              ...p,
+              name: input.name,
+              role: input.seniority,
+              pronouns: input.pronouns,
+              initials: initialsOf(input.name),
+              cadenceDays: input.cadenceDays,
+              seniority: input.seniority,
+              team: input.team,
+              location: input.location,
+              timezone: input.timezone,
+              onCall: input.onCall,
+              joinedDate: input.joinedDate,
+            }
+          : p,
+      ),
+    };
+  },
+
+  removePerson(data: AppData, id: string): AppData {
+    return { ...data, people: data.people.filter((p) => p.id !== id) };
+  },
+
+  addPerson(data: AppData, input: ReportFields, id: string): AppData {
+    const coverage = Object.fromEntries(AREA_KEYS.map((k) => [k, 0])) as Person["coverage"];
+    const person: Person = {
+      id,
+      name: input.name,
+      role: input.seniority,
+      pronouns: input.pronouns,
+      initials: initialsOf(input.name),
+      hue: hueOf(input.name),
+      tenureMonths: 0,
+      cadenceDays: input.cadenceDays,
+      lastOneOnOne: null,
+      nextScheduled: null,
+      talkTrend: [],
+      sentimentTrend: [],
+      coverage,
+      threads: [],
+      actions: [],
+      asyncAgenda: [],
+      meetings: [],
+      seniority: input.seniority,
+      team: input.team,
+      location: input.location,
+      timezone: input.timezone,
+      onCall: input.onCall,
+      joinedDate: input.joinedDate,
+    };
+    return { ...data, people: [...data.people, person] };
+  },
 };
 
+export type LoadStatus = "loading" | "ready" | "error";
+
 /**
- * React hook — wraps the pure reducers with useState + persistence.
- * Each mutation calls store.save(next) then updates React state.
- *
- * `store` is injectable for testing the hook in a jsdom environment (Phase 4
- * integration tests); it defaults to the real localStorage-backed store.
+ * React hook — wraps the pure reducers with async useState + persistence.
+ * Consumes the async AppStore interface so the same hook drives both
+ * localStorage (local build) and Supabase (supabase build).
  *
  * Note: the hook itself is not unit-tested here because the vitest env is
  * `node` and has no DOM. The pure `reducers` above are the tested surface.
  */
-export function useAppState(store: Store = createStore()) {
-  const [data, setData] = useState<AppData>(() => store.load());
+export function useAppState(store: AppStore) {
+  const [data, setData] = useState<AppData | null>(null);
+  const [status, setStatus] = useState<LoadStatus>("loading");
+  const [saveError, setSaveError] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    setStatus("loading");
+    store
+      .load()
+      .then((d) => { if (alive) { setData(d); setStatus("ready"); } })
+      .catch(() => { if (alive) setStatus("error"); });
+    return () => { alive = false; };
+  }, [store]);
 
   const apply = useCallback(
     (next: AppData) => {
-      store.save(next);
-      setData(next);
+      setData(next); // optimistic
+      setSaveError(false);
+      store.save(next).catch(() => setSaveError(true));
     },
     [store],
   );
@@ -146,15 +219,27 @@ export function useAppState(store: Store = createStore()) {
   return useMemo(
     () => ({
       data,
+      status,
+      saveError,
       toggleAction: (id: string, now: string) =>
-        apply(reducers.toggleAction(data, id, now)),
+        data && apply(reducers.toggleAction(data, id, now)),
       toggleRaise: (id: string) =>
-        apply(reducers.toggleRaise(data, id)),
+        data && apply(reducers.toggleRaise(data, id)),
       addAsyncItem: (pid: string, item: NewAsync, now: string, id: string) =>
-        apply(reducers.addAsyncItem(data, pid, item, now, id)),
+        data && apply(reducers.addAsyncItem(data, pid, item, now, id)),
       saveMeeting: (input: SaveMeetingInput) =>
-        apply(reducers.saveMeeting(data, input)),
+        data && apply(reducers.saveMeeting(data, input)),
+      addPerson: (input: ReportFields): string | undefined => {
+        if (!data) return undefined;
+        const id = `p-${crypto.randomUUID().slice(0, 8)}`;
+        apply(reducers.addPerson(data, input, id));
+        return id;
+      },
+      updatePerson: (id: string, input: ReportFields) =>
+        data && apply(reducers.updatePerson(data, id, input)),
+      removePerson: (id: string) =>
+        data && apply(reducers.removePerson(data, id)),
     }),
-    [data, apply],
+    [data, status, saveError, apply],
   );
 }

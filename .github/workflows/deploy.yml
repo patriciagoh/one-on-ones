@@ -3,6 +3,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -16,7 +17,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run lint:tokens
+      - run: npm run build
+        env:
+          VITE_BACKEND: supabase
+          VITE_SUPABASE_URL: https://example.supabase.co
+          VITE_SUPABASE_ANON_KEY: ci-placeholder
+
   build:
+    needs: ci
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -29,6 +50,8 @@ jobs:
       - run: npm run lint:tokens
       - run: npm test
       - run: npm run build
+        env:
+          VITE_BACKEND: local
       - uses: actions/upload-pages-artifact@v5
         with:
           path: dist

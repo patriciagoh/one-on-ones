@@ -311,8 +311,14 @@ export function Overview({ data, now }: OverviewProps) {
       {/* Masthead */}
       <Masthead
         rightSlot={
-          <span className="font-mono text-xs text-muted">
+          <span className="font-mono text-xs text-muted flex items-center">
             {people.length} reports
+            <Link
+              to="/new"
+              className="ml-3 px-3 py-1.5 rounded-md bg-matcha-deep text-paper font-sans text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-matcha-deep focus-visible:ring-offset-2"
+            >
+              Add report
+            </Link>
           </span>
         }
       />
@@ -330,6 +336,14 @@ export function Overview({ data, now }: OverviewProps) {
               What needs you this week.
             </span>
           </h1>
+          {people.length === 0 && (
+            <Link
+              to="/new"
+              className="inline-block mt-4 px-4 py-2 rounded-md bg-matcha-deep text-paper font-sans font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-matcha-deep focus-visible:ring-offset-2"
+            >
+              Add your first report
+            </Link>
+          )}
         </div>
 
         {/* Sort control */}

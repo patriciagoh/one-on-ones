@@ -110,6 +110,25 @@ blobs).
   analytics/telemetry, `JSON.parse` guarded, no prototype-pollution path, `npm audit
   --omit=dev` = 0, GitHub Actions workflow minimal-permission and clean.
 
+## Supply-chain hardening (added 2026-06-03, Phase 2a branch)
+
+Prompted by the active "Mini Shai-Hulud" npm worm (spreads via install lifecycle scripts,
+harvests tokens/.env/CI secrets). Applied:
+- **`.npmrc` `ignore-scripts=true`** — the primary defense; blocks pre/postinstall hooks.
+  Verified a clean `npm install` + build + 74 tests still pass (esbuild needs no postinstall).
+- **Pinned `@supabase/supabase-js` to an exact version** (was `^2.107.0`).
+- Lockfile committed; CI already uses `npm ci`; `.env` gitignored; CI `GITHUB_TOKEN` perms minimal.
+
+**`npm audit`: 5 findings (4 moderate + 1 critical) — ALL dev-only, deferred.** `npm audit
+--omit=dev` = **0** (production bundle clean). The findings are the esbuild dev-server SSRF
+(GHSA-67mh-4wv8-2f99) cascading through vite/vitest, and the vitest UI arbitrary-file-read
+(GHSA-5xrq-8626-4rwp, critical) — none ship to users, and the UI server isn't even invoked
+(`test` = `vitest run`). Fixes require breaking upgrades (vite 5→8, vitest 2→4). **→ Deferred
+to a dedicated vite/vitest major-upgrade task**, not bundled into hardening.
+
+Considered, not done now: pin GitHub Actions to commit SHAs (currently `@vN` tags) — low-risk
+follow-up; Socket/Dependabot with a version cooldown.
+
 ## Won't-fix
 
 - None.

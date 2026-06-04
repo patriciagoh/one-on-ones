@@ -13,22 +13,25 @@ network call. Most correctness findings only manifest with real, repeated, mutat
 use (Phase 2) or via code paths that don't exist yet (person creation, hand-crafted
 blobs).
 
-## Must-fix (fixing now, in this phase)
+## Must-fix (DONE in this phase)
 
-- [ ] **Action IDs collide when two meetings are saved for the same person on the
+- [x] **Action IDs collide when two meetings are saved for the same person on the
   same day** — `src/state/useAppState.ts:97`. IDs are `act-${personId}-${date}-${i}`;
   a same-day second save reuses identical IDs, and `toggleAction` (which matches by
   ID across all people) then toggles *every* action sharing that ID → silent ledger
-  corruption. Reachable today via Meeting Mode → save. **Fix:** make generated action
-  IDs unique (e.g. append a `crypto.randomUUID()` fragment). TDD.
-- [ ] **`PrepDigest` "Start 1:1" CTA lacks a `focus-visible` ring** —
+  corruption. Reachable today via Meeting Mode → save. **Fixed** (`6890df1`): append a
+  `crypto.randomUUID().slice(0,8)` fragment; TDD test added (same-day saves yield
+  unique IDs).
+- [x] **`PrepDigest` "Start 1:1" CTA lacks a `focus-visible` ring** —
   `src/ui/PrepDigest.tsx:122`. Every other interactive element has one; this is a
   WCAG 2.2 AA (2.4.7 Focus Visible) keyboard-accessibility gap, and AA is an explicit
   project invariant. axe didn't catch it (focus styling isn't statically detectable).
-  **Fix:** add the same `focus-visible:ring-*` treatment used by sibling buttons.
-- [ ] **README claims "no telemetry, no network" but the prod build calls Google
-  Fonts** (see security finding below). The claim is currently false. **Fix:** correct
-  the README wording now; track font self-hosting as a Phase 2 pre-launch item.
+  **Fixed** (`eab6618`): added `focus-visible:ring-2 ring-paper ring-offset-2` —
+  `ring-paper` (white) chosen over `ring-matcha-deep` for contrast on the dark panel.
+- [x] **README implies a fully self-contained app, but the prod build calls Google
+  Fonts** (see security finding below). **Fixed** (`98bede4`): added an honest Privacy
+  note (no telemetry, but Google Fonts is a third-party request; self-hosting planned).
+  Font self-hosting itself tracked as a Phase 2 pre-launch item.
 
 ## Should-fix (cheap, but deferred to keep Phase 1 tight / product decision needed)
 

@@ -24,8 +24,9 @@ export function tenureMonths(joinedDate: ISO | null | undefined, now: ISO): numb
   return Math.max(0, Math.floor((Date.parse(now) - Date.parse(joinedDate)) / MS_PER_MONTH));
 }
 
-/** Friendly tenure ("1y 4m" / "5m" / "<1m"). Falls back to legacy months. */
+/** Friendly tenure ("1y 4m" / "5m" / "<1m" / "—"). Falls back to legacy months. */
 export function tenureLabel(joinedDate: ISO | null | undefined, now: ISO, fallbackMonths = 0): string {
+  if (!joinedDate && !fallbackMonths) return "—";
   const m = joinedDate ? tenureMonths(joinedDate, now) : fallbackMonths;
   if (m < 1) return "<1m";
   const y = Math.floor(m / 12);

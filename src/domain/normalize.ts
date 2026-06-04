@@ -20,6 +20,12 @@ export function normalizeAppData(data: AppData): AppData {
         ...p,
         coverage,
         cadenceDays: p.cadenceDays >= 1 ? p.cadenceDays : 1,
+        seniority: p.seniority ?? "",
+        team: p.team ?? "",
+        location: p.location ?? "",
+        timezone: p.timezone ?? "",
+        onCall: p.onCall ?? false,
+        joinedDate: p.joinedDate ?? null,
       };
     }),
   };

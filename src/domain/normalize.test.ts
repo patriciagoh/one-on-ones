@@ -27,4 +27,15 @@ describe("normalizeAppData", () => {
     expect(out.people.length).toBe(data.people.length);
     expect(out.people[0].cadenceDays).toBe(data.people[0].cadenceDays);
   });
+
+  it("defaults the new profile fields", () => {
+    const data = seedData();
+    const p = normalizeAppData(data).people[0];
+    expect(p.seniority).toBe("");
+    expect(p.team).toBe("");
+    expect(p.location).toBe("");
+    expect(p.timezone).toBe("");
+    expect(p.onCall).toBe(false);
+    expect(p.joinedDate).toBeNull();
+  });
 });

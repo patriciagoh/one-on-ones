@@ -48,6 +48,12 @@ export interface Person {
   id: string; name: string; role: string; pronouns: string; initials: string;
   hue: number; tenureMonths: number;
   cadenceDays: number;
+  seniority?: string;
+  team?: string;
+  location?: string;
+  timezone?: string;
+  onCall?: boolean;
+  joinedDate?: ISO | null;
   lastOneOnOne: ISO | null;
   nextScheduled: ISO | null;
   talkTrend: number[];      // report's % airtime per past meeting (0 = no meeting)
@@ -57,6 +63,19 @@ export interface Person {
   actions: ActionItem[];
   asyncAgenda: AsyncItem[];
   meetings: MeetingRecord[];
+}
+
+/** The editable profile fields captured by the add/edit ReportForm. */
+export interface ReportFields {
+  name: string;
+  pronouns: string;
+  cadenceDays: number;
+  seniority: string;
+  team: string;
+  location: string;
+  timezone: string;
+  onCall: boolean;
+  joinedDate: ISO | null;
 }
 
 export interface TemplateDef {

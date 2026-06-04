@@ -4,8 +4,18 @@ A local-first manager's tool for running meaningful 1:1s. No backend, no
 telemetry, no accounts — everything lives in your browser's localStorage and
 is seeded with realistic sample data the moment you open it.
 
-**Privacy note:** There is no analytics, telemetry, or third-party network
-requests. Fonts are self-hosted — the app is fully self-contained.
+## Privacy & telemetry
+
+No analytics, no tracking, no cookies, and fonts are self-hosted — the **demo sends nothing**.
+The self-hostable real-app build can *optionally* enable two operational tools, both **off by
+default** and controlled by env vars:
+
+- **Error monitoring (Sentry)** — only if you set `VITE_SENTRY_DSN`. Configured to never send
+  note content: no session replay, no user identification, and event payloads are scrubbed.
+- **Performance insights (Vercel)** — only if you set `VITE_VERCEL_INSIGHTS=1`. Cookieless and
+  anonymous (no personal data, no consent banner needed).
+
+Self-hosters inherit **zero telemetry** unless they explicitly opt in with their own keys.
 
 Live demo: https://patriciagoh.github.io/one-on-ones/
 

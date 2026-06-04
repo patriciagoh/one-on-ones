@@ -21,6 +21,12 @@ import { AuthContext } from "./authContext";
 import { NewReportScreen } from "./NewReportScreen";
 import { EditReportScreen } from "./EditReportScreen";
 
+import { ErrorBoundary } from "./ErrorBoundary";
+import { SpeedInsights } from "@vercel/speed-insights/react";
+import { Analytics } from "@vercel/analytics/react";
+
+const insightsOn = import.meta.env.VITE_VERCEL_INSIGHTS === "1";
+
 // NOTE: A single "now" string is computed once at module load for deterministic
 // seed-relative calculations in this prototype. Every screen receives it as a
 // prop so domain/compute functions remain pure (no Date.now() inside them).
@@ -105,9 +111,13 @@ function SummaryRoute({
 // ---------------------------------------------------------------------------
 
 export function App() {
-  // Demo/local build: no auth, render the app directly (unchanged behavior).
-  if (!authPort) return <AuthedApp />;
-  return <SupabaseAuthGate />;
+  return (
+    <ErrorBoundary>
+      {!authPort ? <AuthedApp /> : <SupabaseAuthGate />}
+      {insightsOn && <SpeedInsights />}
+      {insightsOn && <Analytics />}
+    </ErrorBoundary>
+  );
 }
 
 function SupabaseAuthGate() {

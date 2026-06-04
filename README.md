@@ -4,6 +4,11 @@ A local-first manager's tool for running meaningful 1:1s. No backend, no
 telemetry, no accounts — everything lives in your browser's localStorage and
 is seeded with realistic sample data the moment you open it.
 
+**Privacy note:** There is no analytics or telemetry, but the current build
+loads web fonts from Google Fonts, which makes a network request to a
+third-party server (leaking your IP to Google). Self-hosting the fonts is
+planned; until then the app is not fully self-contained.
+
 Live demo: https://patriciagoh.github.io/one-on-ones/
 
 ## What it is

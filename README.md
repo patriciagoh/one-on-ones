@@ -1,8 +1,10 @@
 # one-on-ones
 
-A local-first manager's tool for running meaningful 1:1s. No backend, no
-telemetry, no accounts — everything lives in your browser's localStorage and
-is seeded with realistic sample data the moment you open it.
+A manager's tool for running meaningful 1:1s. One codebase ships **two builds**:
+a **local-first public demo** (seeded sample data, no backend, no login —
+everything stays in your browser) and a **self-hostable real app** (your data in
+your own Supabase project, behind an email + password login). See
+[Run your own](#run-your-own).
 
 ## Privacy & telemetry
 
@@ -49,11 +51,14 @@ and an action-items rail capture commitments. End the session to save a record.
 and balance verdict, total duration and split, and which coverage areas were
 refreshed. Returns to the Person screen.
 
-## Sample data only, no backend
+## The demo vs. the real app
 
-The six seed people (Sofia, Priya, Tariq, Maya, Dev, Noah) are demo data.
-Nothing is sent to a server. Clearing your browser's site data resets to the
-seed. The app is single-user — one manager's view.
+The **public demo** (`VITE_BACKEND=local`) is seeded with six sample people
+(Sofia, Priya, Tariq, Maya, Dev, Noah) and runs entirely in your browser —
+nothing leaves it, and clearing site data resets to the seed. The **real app**
+(`VITE_BACKEND=supabase`, see [Run your own](#run-your-own)) starts empty and
+stores your data in your own Supabase project behind a login, where you add and
+manage your own reports. Either way it's single-user — one manager's view.
 
 ## Design system
 
@@ -86,14 +91,18 @@ npm run preview       # preview the dist/ build locally
 ## Architecture
 
 ```
-src/domain/     pure logic + types (no React, no DOM); all unit-tested
-src/storage/    localStorage adapter behind injectable interface; schema v2; seed
-src/state/      useAppState hook + pure mutation reducers
-src/ui/         four screens + atoms (Avatar, CoverageRadar, TalkBalance, etc.)
+src/domain/        pure logic + types (no React, no DOM); all unit-tested
+src/storage/       StoragePort behind localStorage (demo) or Supabase (real app);
+                   auth seam; schema v2; seed + emptyData
+src/state/         useAppState + useAuth hooks; pure mutation reducers
+src/ui/            screens + atoms (Avatar, CoverageRadar, TalkBalance, etc.)
+src/observability/ opt-in, privacy-scrubbed Sentry (off unless a DSN is set)
 ```
 
-Routes use a HashRouter so GitHub Pages needs no server-side rewrite:
-`/`, `/person/:id`, `/person/:id/meeting`, `/person/:id/summary`.
+Routes use a HashRouter (no server-side rewrites needed): `/`, `/person/:id`,
+`/person/:id/meeting`, `/person/:id/summary`, `/new`, `/person/:id/edit`. The
+asset base is configurable via `VITE_BASE` — the demo serves under
+`/one-on-ones/` (GitHub Pages), the real app at `/` (Vercel).
 
 ## Run your own
 

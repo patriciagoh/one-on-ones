@@ -18,6 +18,7 @@ import { appStore, authPort } from "../storage/backend";
 import { useAuth } from "../state/useAuth";
 import { LoginScreen } from "./LoginScreen";
 import { AuthContext } from "./authContext";
+import { NewReportScreen } from "./NewReportScreen";
 
 // NOTE: A single "now" string is computed once at module load for deterministic
 // seed-relative calculations in this prototype. Every screen receives it as a
@@ -153,6 +154,9 @@ function AuthedApp() {
           path="/person/:id/summary"
           element={<SummaryRoute state={state} />}
         />
+
+        {/* New report */}
+        <Route path="/new" element={<NewReportScreen onAdd={state.addPerson} />} />
 
         {/* Catch-all — redirect to root */}
         <Route path="*" element={<Navigate to="/" replace />} />

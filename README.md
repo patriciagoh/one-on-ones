@@ -81,3 +81,7 @@ src/ui/         four screens + atoms (Avatar, CoverageRadar, TalkBalance, etc.)
 
 Routes use a HashRouter so GitHub Pages needs no server-side rewrite:
 `/`, `/person/:id`, `/person/:id/meeting`, `/person/:id/summary`.
+
+## License
+
+MIT — see [LICENSE](./LICENSE). You're free to use, modify, and self-host this.

@@ -966,3 +966,8 @@ export function seedData(): AppData {
   // Return fresh copies so callers can mutate safely.
   return structuredClone({ version: 2, people: PEOPLE, templates: TEMPLATES });
 }
+
+/** A fresh account: no people, but the built-in templates preloaded. */
+export function emptyData(): AppData {
+  return structuredClone({ version: 2, people: [], templates: TEMPLATES });
+}

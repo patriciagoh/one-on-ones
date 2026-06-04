@@ -37,9 +37,18 @@ blobs).
 
 - **`saveMeeting` never clears `person.asyncAgenda`** — `src/state/useAppState.ts:113`.
   Report-raised async items persist forever and accumulate every meeting, inflating
-  `attentionScore`. Reachable today. **Deferred because it's a product-semantics
-  decision** (should saving a meeting clear that meeting's agenda? probably, but the
-  handoff spec should decide) — flagged to the user, not auto-fixed.
+  `attentionScore`. **PRODUCT DECISION MADE (2026-06-03), but DEFERRED to a post-Phase-2
+  feature pass** (no rework penalty — `saveMeeting` is a pure, persistence-agnostic
+  reducer; building it after the Supabase backend costs the same as now). Decided rule:
+  on save, clear **only async items that were resolved** (i.e. their meeting agenda step
+  got non-empty notes); async items with empty notes **roll over** to the next agenda,
+  **keeping their original `addedAt`** so repeatedly-skipped items visibly age. Async
+  items only — raise-queue threads and template prompts are not part of `asyncAgenda` and
+  regenerate each meeting, so they're untouched. **No schema change.** Implementation
+  sketch (4 touch points): add `sourceId` to the in-memory `AgendaStep` (MeetingMode) so
+  async steps know their `asyncAgenda` item id; on save collect `resolvedAsyncIds`
+  (async steps with non-empty notes) into a new `SaveMeetingInput` field; `saveMeeting`
+  filters `asyncAgenda` to keep only items NOT in `resolvedAsyncIds`; TDD the three cases.
 - **`raiseQueue` called twice in `ReportCard`** — `src/ui/Overview.tsx:176`. Pure
   waste (same result, sorts threads twice). Trivial dedup. Deferred — Phase 2/3 may
   rework Overview; no behavioral impact.

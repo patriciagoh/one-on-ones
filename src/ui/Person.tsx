@@ -304,31 +304,35 @@ export function Person({
               {person.pronouns ? <span> · {person.pronouns}</span> : null}
             </p>
             <div className="mt-2 flex items-center gap-2 flex-wrap">
-              {/* "in team" chip */}
-              <span className="inline-flex items-center font-mono text-xs px-2 py-0.5 rounded-sm bg-matcha-tint text-matcha-deep">
-                in team
-              </span>
+              {/* "in team" chip — only shown when team is set */}
+              {person.team && (
+                <span className="inline-flex items-center font-mono text-xs px-2 py-0.5 rounded-sm bg-matcha-tint text-matcha-deep">
+                  in {person.team}
+                </span>
+              )}
               {/* Tenure chip */}
               <span className="inline-flex items-center font-mono text-xs px-2 py-0.5 rounded-sm bg-oat border border-line text-muted">
                 {tenureLabel(person.joinedDate, now, person.tenureMonths)} tenure
               </span>
-              {/* Edit link */}
-              <Link to={`/person/${person.id}/edit`}
-                className="font-mono text-xs text-matcha-deep hover:text-matcha transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-matcha-deep rounded-sm px-1">
-                Edit
-              </Link>
             </div>
           </div>
 
-          {/* Primary CTA — "Start 1:1" */}
-          <Link
-            to={`/person/${personId}/meeting`}
-            className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-md font-sans font-semibold text-sm bg-matcha-deep text-paper transition-colors hover:bg-matcha focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-matcha-deep focus-visible:ring-offset-2"
-            aria-label={`Start 1:1 with ${person.name}`}
-            style={{ minHeight: 40 }}
-          >
-            Start 1:1
-          </Link>
+          {/* CTAs — Edit (secondary) + Start 1:1 (primary) */}
+          <div className="flex items-center gap-2 shrink-0">
+            <Link to={`/person/${person.id}/edit`}
+              className="shrink-0 inline-flex items-center px-4 py-2 rounded-md font-sans font-semibold text-sm border border-line text-ink hover:border-matcha-deep transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-matcha-deep focus-visible:ring-offset-2"
+              style={{ minHeight: 40 }}>
+              Edit
+            </Link>
+            <Link
+              to={`/person/${personId}/meeting`}
+              className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-md font-sans font-semibold text-sm bg-matcha-deep text-paper transition-colors hover:bg-matcha focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-matcha-deep focus-visible:ring-offset-2"
+              aria-label={`Start 1:1 with ${person.name}`}
+              style={{ minHeight: 40 }}
+            >
+              Start 1:1
+            </Link>
+          </div>
         </div>
 
         {/* Profile block */}

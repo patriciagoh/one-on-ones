@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { ReportFields } from "../domain/types";
+import { NA_TIMEZONES, CA_PROVINCES, US_STATES } from "./reportFormOptions";
 
 const CADENCES = [
   { label: "Weekly", days: 7 },
@@ -12,9 +13,14 @@ const browserTz = () => {
   try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch { return ""; }
 };
 
+const browserTzIfValid = () => {
+  const tz = browserTz();
+  return NA_TIMEZONES.some((t) => t.value === tz) ? tz : "";
+};
+
 const EMPTY: ReportFields = {
   name: "", pronouns: "", cadenceDays: 14, seniority: "", team: "",
-  location: "", timezone: browserTz(), onCall: false, joinedDate: null,
+  location: "", timezone: browserTzIfValid(), onCall: false, joinedDate: null,
 };
 
 interface ReportFormProps {
@@ -54,10 +60,21 @@ export function ReportForm({ mode, initial, onSubmit }: ReportFormProps) {
       <input id="rf-team" className={field} value={f.team} onChange={(e) => set("team", e.target.value)} />
 
       <label htmlFor="rf-location" className="block text-sm font-medium">Location</label>
-      <input id="rf-location" className={field} value={f.location} onChange={(e) => set("location", e.target.value)} />
+      <select id="rf-location" className={field} value={f.location} onChange={(e) => set("location", e.target.value)}>
+        <option value="">Select location…</option>
+        <optgroup label="Canada">
+          {CA_PROVINCES.map((p) => <option key={p} value={p}>{p}</option>)}
+        </optgroup>
+        <optgroup label="United States">
+          {US_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
+        </optgroup>
+      </select>
 
       <label htmlFor="rf-tz" className="block text-sm font-medium">Timezone</label>
-      <input id="rf-tz" className={field} value={f.timezone} onChange={(e) => set("timezone", e.target.value)} />
+      <select id="rf-tz" className={field} value={f.timezone} onChange={(e) => set("timezone", e.target.value)}>
+        <option value="">Select timezone…</option>
+        {NA_TIMEZONES.map((tz) => <option key={tz.value} value={tz.value}>{tz.label}</option>)}
+      </select>
 
       <label htmlFor="rf-joined" className="block text-sm font-medium">Joined</label>
       <input id="rf-joined" type="date" className={field}

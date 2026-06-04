@@ -29,7 +29,7 @@ describe("ReportForm", () => {
       <ReportForm
         mode="edit"
         initial={{ name: "Dana", pronouns: "they/them", cadenceDays: 7, seniority: "Staff",
-          team: "Infra", location: "NYC", timezone: "America/New_York", onCall: false, joinedDate: "2024-01-01" }}
+          team: "Infra", location: "New York", timezone: "America/New_York", onCall: false, joinedDate: "2024-01-01" }}
         onSubmit={vi.fn()}
       />,
     );

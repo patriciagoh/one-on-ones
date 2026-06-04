@@ -9,13 +9,17 @@ export function useAuth(port: AuthPort) {
 
   useEffect(() => {
     let alive = true;
+    let authoritative = false; // set once onAuthChange fires; it is the source of truth
     const settle = (s: Session | null) => {
       if (!alive) return;
       setSession(s);
       setStatus(s ? "authed" : "anon");
     };
-    port.getSession().then(settle).catch(() => settle(null));
-    const unsub = port.onAuthChange(settle);
+    port
+      .getSession()
+      .then((s) => { if (!authoritative) settle(s); })
+      .catch(() => { if (!authoritative) settle(null); });
+    const unsub = port.onAuthChange((s) => { authoritative = true; settle(s); });
     return () => { alive = false; unsub(); };
   }, [port]);
 

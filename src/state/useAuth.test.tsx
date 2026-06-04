@@ -26,4 +26,16 @@ describe("useAuth", () => {
     await waitFor(() => expect(result.current.status).toBe("authed"));
     expect(result.current.session).toEqual({ userId: "u1" });
   });
+
+  it("lets onAuthChange override a stale getSession result", async () => {
+    const port: AuthPort = {
+      getSession: async () => null,                       // stale: says no session
+      signIn: vi.fn(async () => {}),
+      signOut: vi.fn(async () => {}),
+      onAuthChange: (cb) => { cb({ userId: "u9" }); return () => {}; }, // fresh: authed
+    };
+    const { result } = renderHook(() => useAuth(port));
+    await waitFor(() => expect(result.current.status).toBe("authed"));
+    expect(result.current.session).toEqual({ userId: "u9" });
+  });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { scrubEvent, initObservability, captureError, isObservabilityActive } from "./sentry";
+import { scrubEvent, dropBreadcrumb, initObservability, captureError, isObservabilityActive } from "./sentry";
 
 describe("scrubEvent", () => {
   it("strips request bodies, breadcrumb data, and extra", () => {
@@ -20,6 +20,17 @@ describe("scrubEvent", () => {
     const out = scrubEvent({ message: "boom", level: "error" }) as { message: string; level: string };
     expect(out.message).toBe("boom");
     expect(out.level).toBe("error");
+  });
+
+  it("strips event.user defensively", () => {
+    const out = scrubEvent({ message: "x", user: { id: "u1", email: "a@b.co" } }) as { user?: unknown };
+    expect(out.user).toBeUndefined();
+  });
+});
+
+describe("dropBreadcrumb", () => {
+  it("drops every breadcrumb (returns null) — DOM aria-labels can carry names/notes", () => {
+    expect(dropBreadcrumb()).toBeNull();
   });
 });
 

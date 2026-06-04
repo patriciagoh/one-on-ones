@@ -130,19 +130,26 @@ In `src/storage/store.ts`, import it at the top:
 import { normalizeAppData } from "../domain/normalize";
 ```
 
-Then in `createStore().load()`, wrap the migrate result. Change:
+Then in `createStore().load()`, normalize the migrate result — but compute
+`reseeded` from migrate's output **before** normalizing, because `normalizeAppData`
+always returns a new object (comparing against it would make `reseeded` always true,
+firing the backup/flush on every load). Change:
 
 ```ts
       const data = migrate(parsed);
+      const reseeded = parsed !== data; // migrate returned a fresh seed
 ```
 
 to:
 
 ```ts
-      const data = normalizeAppData(migrate(parsed));
+      const migrated = migrate(parsed);
+      const data = normalizeAppData(migrated);
+      const reseeded = parsed !== migrated; // migrate returned a fresh seed
 ```
 
-(Seed data is already valid, so this is a no-op on existing tests; it only repairs bad blobs.)
+(Seed data is already valid, so normalize is a no-op on values; it only repairs bad
+blobs. Add a test asserting a valid v2 blob is NOT backed up on load.)
 
 - [ ] **Step 6: Run the full suite to confirm no regressions**
 
